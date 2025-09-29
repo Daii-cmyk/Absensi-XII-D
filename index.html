@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi Absensi Online</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            transition: background-image 0.5s ease-in-out;
+        }
+        .hidden {
+            display: none;
+        }
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0,0,0,0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 0.5rem;
+            max-width: 500px;
+            width: 90%;
+        }
+        #video-preview {
+            width: 100%;
+            height: auto;
+            border-radius: 0.5rem;
+            transform: scaleX(-1); /* Mirror effect */
+        }
+        /* Style untuk background login */
+        .login-background {
+            background-image: url('https://images.unsplash.com/photo-1473496169904-658ba7c44d8a?q=80&w=2070&auto=format&fit=crop');
+            background-size: cover;
+            background-position: center;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <!-- Container Utama Aplikasi -->
+    <div id="app-container" class="max-w-4xl mx-auto p-4 md:p-6">
+
+        <!-- Halaman Login -->
+        <div id="login-page" class="bg-white/80 backdrop-blur-md border border-white/20 p-8 rounded-2xl shadow-lg max-w-md mx-auto mt-10">
+            <div class="text-center mb-4">
+                <i class="fas fa-fingerprint text-blue-600 text-6xl"></i>
+            </div>
+            <h1 class="text-3xl font-bold text-center text-gray-800 mb-2">Absensi XII-D</h1>
+            <p class="text-center text-gray-600 mb-8">Silakan login untuk melanjutkan</p>
+            <form id="login-form">
+                <div class="mb-4">
+                    <label for="username" class="block text-gray-700 font-medium mb-2">Username</label>
+                    <input type="text" id="username" class="w-full px-4 py-2 bg-white/70 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                </div>
+                <div class="mb-4">
+                    <label for="password" class="block text-gray-700 font-medium mb-2">Password</label>
+                    <input type="password" id="password" class="w-full px-4 py-2 bg-white/70 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                </div>
+                <div class="mb-6">
+                    <label for="role" class="block text-gray-700 font-medium mb-2">Login sebagai</label>
+                    <select id="role" class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white/70 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="siswa">Siswa</option>
+                        <option value="guru">Guru</option>
+                    </select>
+                </div>
+                <button type="submit" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition duration-300 shadow-lg hover:shadow-blue-500/50">Login</button>
+            </form>
+            <div id="login-error" class="text-red-600 bg-red-100 p-3 rounded-lg text-center mt-4 hidden"></div>
+        </div>
+
+        <!-- Dashboard Siswa -->
+        <div id="student-dashboard" class="hidden">
+            <header class="bg-white p-4 rounded-xl shadow-md mb-6 flex justify-between items-center">
+                <div>
+                    <h1 class="text-2xl font-bold text-blue-600">Dashboard Siswa</h1>
+                    <p class="text-gray-600">Selamat datang, <span id="student-name" class="font-semibold"></span>!</p>
+                </div>
+                <button id="logout-student" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition">
+                    <i class="fa-solid fa-right-from-bracket mr-2"></i>Logout
+                </button>
+            </header>
+
+            <div class="bg-white p-6 rounded-xl shadow-md mb-6">
+                <h2 class="text-xl font-bold mb-4">Absensi Hari Ini</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <button id="check-in-btn" class="bg-green-500 text-white font-bold py-4 rounded-lg hover:bg-green-600 transition text-lg disabled:bg-gray-400 disabled:cursor-not-allowed">
+                        <i class="fa-solid fa-arrow-right-to-bracket mr-2"></i> Check-in
+                    </button>
+                    <button id="check-out-btn" class="bg-orange-500 text-white font-bold py-4 rounded-lg hover:bg-orange-600 transition text-lg disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>
+                        <i class="fa-solid fa-door-open mr-2"></i> Check-out
+                    </button>
+                </div>
+                <div id="attendance-status" class="mt-4 text-center font-medium text-gray-700"></div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-md mb-6">
+                <h2 class="text-xl font-bold mb-4">Pengajuan Izin / Sakit</h2>
+                <button id="leave-request-btn" class="w-full bg-yellow-500 text-white font-bold py-3 rounded-lg hover:bg-yellow-600 transition text-lg">
+                    <i class="fa-solid fa-file-alt mr-2"></i> Ajukan Izin atau Sakit
+                </button>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-md">
+                <h2 class="text-xl font-bold mb-4">Riwayat Kehadiran</h2>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="bg-gray-100">
+                                <th class="p-3">Tanggal</th>
+                                <th class="p-3">Check-in</th>
+                                <th class="p-3">Check-out</th>
+                                <th class="p-3">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="student-history">
+                            <!-- Data riwayat akan diisi oleh JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard Guru -->
+        <div id="teacher-dashboard" class="hidden">
+            <header class="bg-white p-4 rounded-xl shadow-md mb-6 flex justify-between items-center">
+                <div>
+                    <h1 class="text-2xl font-bold text-blue-600">Dashboard Guru</h1>
+                    <p class="text-gray-600">Selamat datang, <span id="teacher-name" class="font-semibold"></span>!</p>
+                </div>
+                <button id="logout-teacher" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition">
+                    <i class="fa-solid fa-right-from-bracket mr-2"></i>Logout
+                </button>
+            </header>
+            
+            <div class="mb-6">
+                <div class="border-b border-gray-200">
+                    <nav id="teacher-tabs" class="-mb-px flex space-x-6" aria-label="Tabs">
+                        <a href="#rekap" class="tab-link active-tab border-blue-500 text-blue-600 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Rekap Absensi</a>
+                        <a href="#izin" class="tab-link border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Persetujuan Izin</a>
+                        <a href="#laporan" class="tab-link border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Laporan</a>
+                    </nav>
+                </div>
+            </div>
+
+            <div id="teacher-tab-content">
+                <div id="rekap" class="tab-content bg-white p-6 rounded-xl shadow-md">
+                    <h2 class="text-xl font-bold mb-4">Rekap Absensi Siswa Hari Ini</h2>
+                     <div class="overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead>
+                                <tr class="bg-gray-100">
+                                    <th class="p-3">Nama Siswa</th>
+                                    <th class="p-3">Check-in</th>
+                                    <th class="p-3">Foto</th>
+                                    <th class="p-3">Check-out</th>
+                                    <th class="p-3">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="teacher-rekap">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div id="izin" class="tab-content hidden bg-white p-6 rounded-xl shadow-md">
+                     <h2 class="text-xl font-bold mb-4">Persetujuan Izin & Sakit</h2>
+                     <div class="overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead>
+                                <tr class="bg-gray-100">
+                                    <th class="p-3">Nama Siswa</th>
+                                    <th class="p-3">Tanggal</th>
+                                    <th class="p-3">Keterangan</th>
+                                    <th class="p-3">Status</th>
+                                    <th class="p-3">Bukti</th>
+                                    <th class="p-3">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="leave-requests">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div id="laporan" class="tab-content hidden bg-white p-6 rounded-xl shadow-md">
+                    <h2 class="text-xl font-bold mb-4">Laporan Kehadiran</h2>
+                    <p class="mb-4 text-gray-600">Pilih rentang tanggal untuk mengunduh laporan.</p>
+                    <div class="flex items-center space-x-4 mb-4">
+                        <div>
+                            <label for="start-date" class="block text-sm font-medium text-gray-700">Tanggal Mulai</label>
+                            <input type="date" id="start-date" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                        </div>
+                        <div>
+                            <label for="end-date" class="block text-sm font-medium text-gray-700">Tanggal Akhir</label>
+                            <input type="date" id="end-date" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                        </div>
+                    </div>
+                    <button id="download-report-btn" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition">
+                        <i class="fa-solid fa-download mr-2"></i>Unduh Laporan
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal untuk Selfie (Bukti Izin) -->
+    <div id="selfie-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h2 class="text-xl font-bold mb-4">Ambil Foto Bukti</h2>
+            <p class="text-gray-600 mb-4">Contoh: Surat dokter atau foto yang relevan.</p>
+            <video id="video-preview" autoplay></video>
+            <canvas id="selfie-canvas" class="hidden"></canvas>
+            <div class="flex justify-between mt-4">
+                <button id="capture-btn" class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition mr-2">Ambil Foto</button>
+                <button id="cancel-selfie-btn" class="w-full bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-400 transition ml-2">Batal</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal Notifikasi -->
+    <div id="notification-modal" class="modal-overlay hidden">
+        <div class="modal-content text-center">
+            <div id="notification-icon" class="text-5xl mb-4"></div>
+            <h2 id="notification-title" class="text-xl font-bold mb-2"></h2>
+            <p id="notification-message" class="text-gray-600 mb-6"></p>
+            <button id="close-notification-btn" class="bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700 transition">Tutup</button>
+        </div>
+    </div>
+
+    <!-- Modal untuk Selfie Check-in -->
+    <div id="checkin-selfie-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h2 class="text-xl font-bold mb-4">Verifikasi Check-in dengan Foto</h2>
+            <p class="text-gray-600 mb-4">Posisikan wajah Anda di depan kamera. Lokasi Anda akan dicatat secara otomatis.</p>
+            <video id="checkin-video-preview" class="w-full h-auto rounded-lg bg-gray-200" autoplay></video>
+            <canvas id="checkin-selfie-canvas" class="hidden"></canvas>
+            <div id="location-info" class="mt-4 text-center text-sm text-gray-600 bg-gray-100 p-2 rounded-lg">
+                <i class="fa-solid fa-location-crosshairs fa-spin mr-2"></i>Mendapatkan lokasi...
+            </div>
+            <div class="flex justify-between mt-4">
+                <button id="capture-checkin-btn" class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition mr-2 disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>
+                    <i class="fa-solid fa-camera mr-2"></i> Ambil Foto & Check-in
+                </button>
+                <button id="cancel-checkin-btn" class="w-full bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-400 transition ml-2">Batal</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal untuk Pengajuan Izin -->
+    <div id="leave-request-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h2 class="text-xl font-bold mb-4">Formulir Izin / Sakit</h2>
+            <form id="leave-request-form">
+                <div class="mb-4">
+                    <label for="leave-type" class="block text-gray-700 font-medium mb-2">Jenis Pengajuan</label>
+                    <select id="leave-type" class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="Sakit">Sakit</option>
+                        <option value="Izin">Izin</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label for="leave-reason" class="block text-gray-700 font-medium mb-2">Keterangan</label>
+                    <textarea id="leave-reason" rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required placeholder="Contoh: Ada acara keluarga di luar kota."></textarea>
+                </div>
+                <div class="mb-4">
+                     <button type="button" id="attach-photo-btn" class="w-full border border-blue-500 text-blue-600 font-bold py-2 px-4 rounded-lg hover:bg-blue-50 transition">
+                         <i class="fa-solid fa-camera mr-2"></i> Lampirkan Foto Bukti
+                     </button>
+                     <img id="photo-preview" src="" class="hidden mt-4 w-24 h-24 object-cover rounded-lg"/>
+                </div>
+                <div class="flex justify-between mt-6">
+                    <button type="submit" class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition mr-2">Kirim Pengajuan</button>
+                    <button type="button" id="cancel-leave-request-btn" class="w-full bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-400 transition ml-2">Batal</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- DATA DUMMY ---
+            const users = [
+                { id: 's1', username: 'budi', password: '123', role: 'siswa', name: 'Budi Santoso' },
+                { id: 's2', username: 'ani', password: '123', role: 'siswa', name: 'Ani Lestari' },
+                { id: 's3', username: 'eko', password: '123', role: 'siswa', name: 'Eko Nugroho' },
+                { id: 'g1', username: 'guru', password: '456', role: 'guru', name: 'Bapak Dadang' },
+            ];
+            
+            let attendanceRecords = JSON.parse(localStorage.getItem('attendanceRecords')) || [];
+            let leaveRequests = JSON.parse(localStorage.getItem('leaveRequests')) || [
+                { id: 'l1', userId: 's2', studentName: 'Ani Lestari', date: getTodayDateString(), type: 'Sakit', reason: 'Demam dan batuk', status: 'pending', proof: 'https://placehold.co/400x400/EFEFEF/AAAAAA?text=Surat+Dokter' },
+                { id: 'l2', userId: 's3', studentName: 'Eko Nugroho', date: getTodayDateString(), type: 'Izin', reason: 'Acara keluarga', status: 'pending', proof: 'https://placehold.co/400x400/EFEFEF/AAAAAA?text=Surat+Izin' },
+            ];
+
+            let currentUser = null;
+            let selfieDataUrl = null; // Stores photo data for leave requests
+            let checkinLocationData = null; // Stores location data for check-in
+
+            // --- ELEMEN DOM ---
+            const loginPage = document.getElementById('login-page');
+            const studentDashboard = document.getElementById('student-dashboard');
+            const teacherDashboard = document.getElementById('teacher-dashboard');
+            const loginForm = document.getElementById('login-form');
+            const loginError = document.getElementById('login-error');
+            const leaveRequestModal = document.getElementById('leave-request-modal');
+            const leaveRequestForm = document.getElementById('leave-request-form');
+            const photoPreview = document.getElementById('photo-preview');
+            
+            const checkinSelfieModal = document.getElementById('checkin-selfie-modal');
+            const checkinVideo = document.getElementById('checkin-video-preview');
+            const checkinCanvas = document.getElementById('checkin-selfie-canvas');
+            const locationInfo = document.getElementById('location-info');
+            const captureCheckinBtn = document.getElementById('capture-checkin-btn');
+            const cancelCheckinBtn = document.getElementById('cancel-checkin-btn');
+
+            function getTodayDateString() {
+                return new Date().toISOString().split('T')[0];
+            }
+            const getCurrentTimeString = () => new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+
+            function setLoginBackground(isActive) {
+                if (isActive) {
+                    document.body.classList.add('login-background');
+                    document.body.classList.remove('bg-gray-100');
+                    document.getElementById('app-container').classList.remove('max-w-4xl', 'mx-auto');
+                } else {
+                    document.body.classList.remove('login-background');
+                    document.body.classList.add('bg-gray-100');
+                    document.getElementById('app-container').classList.add('max-w-4xl', 'mx-auto');
+                }
+            }
+            
+            // --- FUNGSI UTAMA ---
+            
+            loginForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const username = document.getElementById('username').value;
+                const password = document.getElementById('password').value;
+                const role = document.getElementById('role').value;
+
+                const user = users.find(u => u.username === username && u.password === password && u.role === role);
+
+                if (user) {
+                    currentUser = user;
+                    sessionStorage.setItem('currentUser', JSON.stringify(user));
+                    loginPage.classList.add('hidden');
+                    setLoginBackground(false);
+                    if (user.role === 'siswa') {
+                        showStudentDashboard();
+                    } else {
+                        showTeacherDashboard();
+                    }
+                    loginError.classList.add('hidden');
+                } else {
+                    loginError.textContent = 'Username, password, atau peran salah!';
+                    loginError.classList.remove('hidden');
+                }
+            });
+            
+            function showStudentDashboard() {
+                document.getElementById('student-name').textContent = currentUser.name;
+                studentDashboard.classList.remove('hidden');
+                updateStudentUI();
+            }
+
+            function showTeacherDashboard() {
+                document.getElementById('teacher-name').textContent = currentUser.name;
+                teacherDashboard.classList.remove('hidden');
+                updateTeacherUI();
+            }
+
+            document.getElementById('logout-student').addEventListener('click', logout);
+            document.getElementById('logout-teacher').addEventListener('click', logout);
+            function logout() {
+                currentUser = null;
+                sessionStorage.removeItem('currentUser');
+                loginPage.classList.remove('hidden');
+                studentDashboard.classList.add('hidden');
+                teacherDashboard.classList.add('hidden');
+                document.getElementById('login-form').reset();
+                setLoginBackground(true);
+            }
+
+            // --- FUNGSI SISWA ---
+            const checkInBtn = document.getElementById('check-in-btn');
+            const checkOutBtn = document.getElementById('check-out-btn');
+            const selfieModal = document.getElementById('selfie-modal');
+
+            checkInBtn.addEventListener('click', () => startCheckInCapture());
+            checkOutBtn.addEventListener('click', () => recordAttendance('check-out'));
+
+            function updateStudentUI() {
+                const todayDate = getTodayDateString();
+                const todayRecord = attendanceRecords.find(r => r.userId === currentUser.id && r.date === todayDate);
+
+                if (todayRecord) {
+                    checkInBtn.disabled = true;
+                    document.getElementById('attendance-status').textContent = `Anda check-in pada pukul ${todayRecord.checkInTime}.`;
+                    if (todayRecord.checkOutTime) {
+                        checkOutBtn.disabled = true;
+                        document.getElementById('attendance-status').textContent += ` Dan check-out pada pukul ${todayRecord.checkOutTime}.`;
+                    } else {
+                        checkOutBtn.disabled = false;
+                    }
+                } else {
+                    checkInBtn.disabled = false;
+                    checkOutBtn.disabled = true;
+                     document.getElementById('attendance-status').textContent = 'Anda belum melakukan absensi hari ini.';
+                }
+                renderStudentHistory();
+            }
+
+            function renderStudentHistory() {
+                const historyBody = document.getElementById('student-history');
+                historyBody.innerHTML = '';
+                const studentRecords = attendanceRecords.filter(r => r.userId === currentUser.id).reverse();
+                if(studentRecords.length === 0){
+                    historyBody.innerHTML = `<tr><td colspan="4" class="text-center p-4 text-gray-500">Belum ada riwayat kehadiran.</td></tr>`;
+                    return;
+                }
+                studentRecords.forEach(record => {
+                    const row = `
+                        <tr class="border-b">
+                            <td class="p-3">${record.date}</td>
+                            <td class="p-3">${record.checkInTime || '-'}</td>
+                            <td class="p-3">${record.checkOutTime || '-'}</td>
+                            <td class="p-3"><span class="px-2 py-1 text-xs font-semibold rounded-full ${record.status === 'Hadir' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">${record.status}</span></td>
+                        </tr>
+                    `;
+                    historyBody.innerHTML += row;
+                });
+            }
+            
+            // --- Fungsi untuk proses check-in ---
+            function startCheckInCapture() {
+                checkinSelfieModal.classList.remove('hidden');
+                checkinLocationData = null;
+                locationInfo.innerHTML = '<i class="fa-solid fa-location-crosshairs fa-spin mr-2"></i>Mendapatkan lokasi...';
+                captureCheckinBtn.disabled = true;
+
+                // Memulai kamera
+                navigator.mediaDevices.getUserMedia({ video: true })
+                    .then(stream => { checkinVideo.srcObject = stream; })
+                    .catch(err => {
+                        console.error("Error accessing camera: ", err);
+                        showNotification('Gagal', 'Tidak dapat mengakses kamera. Pastikan Anda memberikan izin.', 'error');
+                        checkinSelfieModal.classList.add('hidden');
+                    });
+
+                // Mengambil lokasi
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+                        (position) => {
+                            checkinLocationData = {
+                                latitude: position.coords.latitude,
+                                longitude: position.coords.longitude
+                            };
+                            locationInfo.innerHTML = `<i class="fa-solid fa-check-circle text-green-500 mr-2"></i>Lokasi berhasil didapat.`;
+                            captureCheckinBtn.disabled = false; // Aktifkan tombol jika lokasi berhasil
+                        },
+                        (error) => {
+                            console.error("Error getting location: ", error);
+                            locationInfo.innerHTML = `<i class="fa-solid fa-times-circle text-red-500 mr-2"></i>Gagal mendapatkan lokasi.`;
+                            showNotification('Gagal', 'Tidak dapat mengambil data lokasi. Pastikan GPS aktif dan izin diberikan.', 'error');
+                        },
+                        { enableHighAccuracy: true }
+                    );
+                } else {
+                    locationInfo.innerHTML = 'Geolocation tidak didukung oleh browser ini.';
+                    showNotification('Gagal', 'Geolocation tidak didukung oleh browser Anda.', 'error');
+                }
+            }
+
+            // Event listener untuk tombol di modal check-in
+            cancelCheckinBtn.addEventListener('click', () => {
+                checkinSelfieModal.classList.add('hidden');
+                if (checkinVideo.srcObject) {
+                    checkinVideo.srcObject.getTracks().forEach(track => track.stop());
+                }
+            });
+
+            captureCheckinBtn.addEventListener('click', () => {
+                const context = checkinCanvas.getContext('2d');
+                checkinCanvas.width = checkinVideo.videoWidth;
+                checkinCanvas.height = checkinVideo.videoHeight;
+                context.translate(checkinCanvas.width, 0);
+                context.scale(-1, 1);
+                context.drawImage(checkinVideo, 0, 0, checkinCanvas.width, checkinCanvas.height);
+                const photoDataUrl = checkinCanvas.toDataURL('image/jpeg');
+                
+                recordAttendance('check-in', photoDataUrl, checkinLocationData);
+                
+                cancelCheckinBtn.click();
+            });
+
+            function recordAttendance(type, photo, location) {
+                const todayDate = getTodayDateString();
+                const currentTime = getCurrentTimeString();
+                
+                if (type === 'check-in') {
+                     if (!photo) {
+                        showNotification('Gagal', 'Foto wajib untuk check-in.', 'error');
+                        return;
+                    }
+                    const newRecord = {
+                        id: 'att' + Date.now(),
+                        userId: currentUser.id,
+                        studentName: currentUser.name,
+                        date: todayDate,
+                        checkInTime: currentTime,
+                        checkOutTime: null,
+                        status: 'Hadir',
+                        checkInPhoto: photo, // Data baru
+                        location: location,   // Data baru
+                    };
+                    attendanceRecords.push(newRecord);
+                    showNotification('Berhasil', `Anda berhasil check-in pada pukul ${currentTime}.`, 'success');
+                } else if (type === 'check-out') {
+                    const todayRecord = attendanceRecords.find(r => r.userId === currentUser.id && r.date === todayDate);
+                    if (todayRecord) {
+                        todayRecord.checkOutTime = currentTime;
+                        showNotification('Berhasil', `Anda berhasil check-out pada pukul ${currentTime}.`, 'success');
+                    }
+                }
+                saveDataToLocalStorage();
+                updateStudentUI();
+            }
+
+            // --- LOGIC PENGAJUAN IZIN ---
+            document.getElementById('leave-request-btn').addEventListener('click', () => {
+                leaveRequestModal.classList.remove('hidden');
+            });
+            document.getElementById('cancel-leave-request-btn').addEventListener('click', () => {
+                leaveRequestModal.classList.add('hidden');
+                leaveRequestForm.reset();
+                photoPreview.classList.add('hidden');
+                selfieDataUrl = null;
+            });
+            document.getElementById('attach-photo-btn').addEventListener('click', () => {
+                startSelfieCapture();
+            });
+
+            leaveRequestForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                if(!selfieDataUrl) {
+                    showNotification('Gagal', 'Anda wajib melampirkan foto bukti.', 'error');
+                    return;
+                }
+                
+                const leaveType = document.getElementById('leave-type').value;
+                const newRequest = {
+                    id: 'l' + Date.now(),
+                    userId: currentUser.id,
+                    studentName: currentUser.name,
+                    date: getTodayDateString(),
+                    reason: document.getElementById('leave-reason').value,
+                    status: 'pending',
+                    type: leaveType,
+                    proof: selfieDataUrl
+                };
+                
+                leaveRequests.push(newRequest);
+                saveDataToLocalStorage();
+                showNotification('Berhasil', 'Pengajuan Anda telah terkirim.', 'success');
+                document.getElementById('cancel-leave-request-btn').click();
+            });
+
+            // --- FUNGSI KAMERA (UNTUK BUKTI) ---
+            const video = document.getElementById('video-preview');
+            const canvas = document.getElementById('selfie-canvas');
+
+            function startSelfieCapture() {
+                selfieModal.classList.remove('hidden');
+                navigator.mediaDevices.getUserMedia({ video: true })
+                    .then(stream => { video.srcObject = stream; })
+                    .catch(err => {
+                        console.error("Error accessing camera: ", err);
+                        showNotification('Gagal', 'Tidak dapat mengakses kamera. Pastikan Anda memberikan izin.', 'error');
+                        selfieModal.classList.add('hidden');
+                    });
+            }
+
+            document.getElementById('cancel-selfie-btn').addEventListener('click', () => {
+                selfieModal.classList.add('hidden');
+                if (video.srcObject) {
+                    video.srcObject.getTracks().forEach(track => track.stop());
+                }
+            });
+
+            document.getElementById('capture-btn').addEventListener('click', () => {
+                const context = canvas.getContext('2d');
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                context.translate(canvas.width, 0);
+                context.scale(-1, 1);
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                selfieDataUrl = canvas.toDataURL('image/jpeg');
+                
+                photoPreview.src = selfieDataUrl;
+                photoPreview.classList.remove('hidden');
+                
+                document.getElementById('cancel-selfie-btn').click();
+            });
+            
+            // --- FUNGSI GURU ---
+            function updateTeacherUI() {
+                renderTeacherRekap();
+                renderLeaveRequests();
+                setupTabs();
+            }
+            
+            function renderTeacherRekap() {
+                const rekapBody = document.getElementById('teacher-rekap');
+                rekapBody.innerHTML = '';
+                const todayDate = getTodayDateString();
+                const allStudents = users.filter(u => u.role === 'siswa');
+                
+                allStudents.forEach(student => {
+                    const todayRecord = attendanceRecords.find(r => r.userId === student.id && r.date === todayDate);
+                    const leaveRecord = leaveRequests.find(l => l.userId === student.id && l.date === todayDate && l.status === 'approved');
+
+                    let status = '<span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Absen</span>';
+                    let checkIn = '-';
+                    let checkOut = '-';
+                    let photoCell = '<td class="p-3">-</td>';
+
+                    if (todayRecord) {
+                        status = `<span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">${todayRecord.status}</span>`;
+                        checkIn = todayRecord.checkInTime;
+                        checkOut = todayRecord.checkOutTime || '-';
+                        if (todayRecord.checkInPhoto) {
+                            const locationText = todayRecord.location 
+                                ? `<a href="https://www.google.com/maps?q=${todayRecord.location.latitude},${todayRecord.location.longitude}" target="_blank" class="text-xs text-blue-500 hover:underline">Lihat Lokasi</a>` 
+                                : '';
+                            photoCell = `
+                                <td class="p-3 text-center">
+                                    <img src="${todayRecord.checkInPhoto}" alt="Foto" class="w-12 h-12 rounded-md object-cover cursor-pointer mx-auto" onclick="showImageModal('${todayRecord.checkInPhoto}')">
+                                    ${locationText}
+                                </td>
+                            `;
+                        }
+                    } else if (leaveRecord) {
+                        status = `<span class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">${leaveRecord.type}</span>`;
+                    }
+                    
+                    const row = `
+                        <tr class="border-b">
+                            <td class="p-3 font-medium">${student.name}</td>
+                            <td class="p-3">${checkIn}</td>
+                            ${photoCell}
+                            <td class="p-3">${checkOut}</td>
+                            <td class="p-3">${status}</td>
+                        </tr>
+                    `;
+                    rekapBody.innerHTML += row;
+                });
+            }
+
+            function renderLeaveRequests() {
+                const requestsBody = document.getElementById('leave-requests');
+                requestsBody.innerHTML = '';
+                 if(leaveRequests.length === 0){
+                     requestsBody.innerHTML = `<tr><td colspan="6" class="text-center p-4 text-gray-500">Tidak ada pengajuan izin.</td></tr>`;
+                     return;
+                 }
+                leaveRequests.forEach(req => {
+                    const proof = req.proof ? `<img src="${req.proof}" alt="Bukti" class="w-12 h-12 rounded-md object-cover cursor-pointer" onclick="showImageModal('${req.proof}')">` : '-';
+                    const row = `
+                        <tr class="border-b">
+                            <td class="p-3">${req.studentName}</td>
+                            <td class="p-3">${req.date}</td>
+                            <td class="p-3">${req.reason} (${req.type})</td>
+                            <td class="p-3">${req.status}</td>
+                            <td class="p-3">${proof}</td>
+                            <td class="p-3">
+                                ${req.status === 'pending' ? `
+                                <button class="approve-btn bg-green-500 text-white px-2 py-1 rounded text-xs mr-1" data-id="${req.id}">Setujui</button>
+                                <button class="reject-btn bg-red-500 text-white px-2 py-1 rounded text-xs" data-id="${req.id}">Tolak</button>
+                                ` : '-'}
+                            </td>
+                        </tr>
+                    `;
+                    requestsBody.innerHTML += row;
+                });
+                
+                document.querySelectorAll('.approve-btn').forEach(btn => btn.addEventListener('click', (e) => handleLeaveAction(e.target.dataset.id, 'approved')));
+                document.querySelectorAll('.reject-btn').forEach(btn => btn.addEventListener('click', (e) => handleLeaveAction(e.target.dataset.id, 'rejected')));
+            }
+            
+            function handleLeaveAction(id, newStatus) {
+                const request = leaveRequests.find(r => r.id === id);
+                if (request) {
+                    request.status = newStatus;
+                    saveDataToLocalStorage();
+                    updateTeacherUI();
+                }
+            }
+
+            document.getElementById('download-report-btn').addEventListener('click', () => {
+                const startDate = document.getElementById('start-date').value;
+                const endDate = document.getElementById('end-date').value;
+
+                if (!startDate || !endDate) {
+                    showNotification('Peringatan', 'Silakan pilih tanggal mulai dan tanggal akhir.', 'error');
+                    return;
+                }
+                
+                let reportData = [];
+                const allStudents = users.filter(u => u.role === 'siswa');
+                
+                for (let d = new Date(startDate); d <= new Date(endDate); d.setDate(d.getDate() + 1)) {
+                    const currentDate = d.toISOString().split('T')[0];
+                    allStudents.forEach(student => {
+                        const attendance = attendanceRecords.find(r => r.userId === student.id && r.date === currentDate);
+                        const leave = leaveRequests.find(l => l.userId === student.id && l.date === currentDate && l.status === 'approved');
+
+                        let status = "Absen";
+                        let checkIn = "";
+                        let checkOut = "";
+
+                        if (attendance) {
+                            status = attendance.status;
+                            checkIn = attendance.checkInTime || "";
+                            checkOut = attendance.checkOutTime || "";
+                        } else if (leave) {
+                            status = leave.type;
+                        }
+
+                        reportData.push({
+                            name: student.name,
+                            date: currentDate,
+                            checkIn: checkIn,
+                            checkOut: checkOut,
+                            status: status
+                        });
+                    });
+                }
+
+
+                if(reportData.length === 0){
+                     showNotification('Info', 'Tidak ada data absensi pada rentang tanggal yang dipilih.', 'info');
+                     return;
+                }
+
+                let csvContent = "data:text/csv;charset=utf-8,";
+                csvContent += "Nama Siswa,Tanggal,Check In,Check Out,Status\r\n";
+                reportData.forEach(row => {
+                    csvContent += `${row.name},${row.date},${row.checkIn},${row.checkOut},${row.status}\r\n`;
+                });
+                
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", `laporan_absensi_${startDate}_${endDate}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                 showNotification('Berhasil', 'Laporan sedang diunduh.', 'success');
+            });
+            
+            // --- FUNGSI TAB GURU ---
+            function setupTabs() {
+                const tabs = document.querySelectorAll('.tab-link');
+                const contents = document.querySelectorAll('.tab-content');
+                
+                tabs.forEach(tab => {
+                    tab.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        tabs.forEach(t => {
+                            t.classList.remove('active-tab', 'border-blue-500', 'text-blue-600');
+                            t.classList.add('border-transparent', 'text-gray-500');
+                        });
+                        tab.classList.add('active-tab', 'border-blue-500', 'text-blue-600');
+                        tab.classList.remove('border-transparent', 'text-gray-500');
+                        
+                        contents.forEach(c => c.classList.add('hidden'));
+                        document.querySelector(tab.getAttribute('href')).classList.remove('hidden');
+                    });
+                });
+            }
+
+            // --- FUNGSI NOTIFIKASI & MODAL ---
+            function showNotification(title, message, type) {
+                const modal = document.getElementById('notification-modal');
+                const iconEl = document.getElementById('notification-icon');
+                const titleEl = document.getElementById('notification-title');
+                const messageEl = document.getElementById('notification-message');
+
+                titleEl.textContent = title;
+                messageEl.textContent = message;
+
+                iconEl.innerHTML = '';
+                if (type === 'success') {
+                    iconEl.innerHTML = '<i class="fa-solid fa-circle-check text-green-500"></i>';
+                } else if (type === 'error') {
+                    iconEl.innerHTML = '<i class="fa-solid fa-circle-xmark text-red-500"></i>';
+                } else if (type === 'info') {
+                     iconEl.innerHTML = '<i class="fa-solid fa-circle-info text-blue-500"></i>';
+                } else if (type === 'loading') {
+                    iconEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-blue-500"></i>';
+                }
+                modal.classList.remove('hidden');
+            }
+
+            document.getElementById('close-notification-btn').addEventListener('click', () => {
+                document.getElementById('notification-modal').classList.add('hidden');
+            });
+
+            // --- LOCAL STORAGE & INISIALISASI ---
+            function saveDataToLocalStorage() {
+                localStorage.setItem('attendanceRecords', JSON.stringify(attendanceRecords));
+                localStorage.setItem('leaveRequests', JSON.stringify(leaveRequests));
+            }
+
+            // Cek jika ada user yang sudah login di session
+            const loggedInUser = sessionStorage.getItem('currentUser');
+            if (loggedInUser) {
+                currentUser = JSON.parse(loggedInUser);
+                loginPage.classList.add('hidden');
+                setLoginBackground(false);
+                if (currentUser.role === 'siswa') {
+                    showStudentDashboard();
+                } else {
+                    showTeacherDashboard();
+                }
+            } else {
+                setLoginBackground(true);
+            }
+
+        });
+
+        // Fungsi untuk menampilkan modal gambar
+        function showImageModal(src) {
+            const modal = document.createElement('div');
+            modal.className = 'modal-overlay';
+            modal.innerHTML = `
+                <div class="modal-content relative p-2">
+                    <img src="${src}" class="max-w-full max-h-[80vh] rounded-md">
+                    <button class="absolute top-2 right-2 bg-white rounded-full h-8 w-8 flex items-center justify-center text-black font-bold">&times;</button>
+                </div>
+            `;
+            modal.addEventListener('click', () => modal.remove());
+            document.body.appendChild(modal);
+        }
+    </script>
+</body>
+</html>
