@@ -245,9 +245,6 @@
             <p class="text-gray-600 mb-4">Posisikan wajah Anda di depan kamera. Lokasi Anda akan dicatat secara otomatis.</p>
             <video id="checkin-video-preview" class="w-full h-auto rounded-lg bg-gray-200" autoplay></video>
             <canvas id="checkin-selfie-canvas" class="hidden"></canvas>
-            <div id="location-info" class="mt-4 text-center text-sm text-gray-600 bg-gray-100 p-2 rounded-lg">
-                <i class="fa-solid fa-location-crosshairs fa-spin mr-2"></i>Mendapatkan lokasi...
-            </div>
             <div class="flex justify-between mt-4">
                 <button id="capture-checkin-btn" class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition mr-2 disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>
                     <i class="fa-solid fa-camera mr-2"></i> Ambil Foto & Check-in
@@ -305,7 +302,6 @@
 
             let currentUser = null;
             let selfieDataUrl = null; // Stores photo data for leave requests
-            let checkinLocationData = null; // Stores location data for check-in
 
             // --- ELEMEN DOM ---
             const loginPage = document.getElementById('login-page');
@@ -320,7 +316,6 @@
             const checkinSelfieModal = document.getElementById('checkin-selfie-modal');
             const checkinVideo = document.getElementById('checkin-video-preview');
             const checkinCanvas = document.getElementById('checkin-selfie-canvas');
-            const locationInfo = document.getElementById('location-info');
             const captureCheckinBtn = document.getElementById('capture-checkin-btn');
             const cancelCheckinBtn = document.getElementById('cancel-checkin-btn');
 
@@ -445,41 +440,19 @@
             // --- Fungsi untuk proses check-in ---
             function startCheckInCapture() {
                 checkinSelfieModal.classList.remove('hidden');
-                checkinLocationData = null;
-                locationInfo.innerHTML = '<i class="fa-solid fa-location-crosshairs fa-spin mr-2"></i>Mendapatkan lokasi...';
                 captureCheckinBtn.disabled = true;
 
                 // Memulai kamera
                 navigator.mediaDevices.getUserMedia({ video: true })
-                    .then(stream => { checkinVideo.srcObject = stream; })
+                    .then(stream => { 
+                        checkinVideo.srcObject = stream; 
+                        captureCheckinBtn.disabled = false;
+                    })
                     .catch(err => {
                         console.error("Error accessing camera: ", err);
                         showNotification('Gagal', 'Tidak dapat mengakses kamera. Pastikan Anda memberikan izin.', 'error');
                         checkinSelfieModal.classList.add('hidden');
                     });
-
-                // Mengambil lokasi
-                if (navigator.geolocation) {
-                    navigator.geolocation.getCurrentPosition(
-                        (position) => {
-                            checkinLocationData = {
-                                latitude: position.coords.latitude,
-                                longitude: position.coords.longitude
-                            };
-                            locationInfo.innerHTML = `<i class="fa-solid fa-check-circle text-green-500 mr-2"></i>Lokasi berhasil didapat.`;
-                            captureCheckinBtn.disabled = false; // Aktifkan tombol jika lokasi berhasil
-                        },
-                        (error) => {
-                            console.error("Error getting location: ", error);
-                            locationInfo.innerHTML = `<i class="fa-solid fa-times-circle text-red-500 mr-2"></i>Gagal mendapatkan lokasi.`;
-                            showNotification('Gagal', 'Tidak dapat mengambil data lokasi. Pastikan GPS aktif dan izin diberikan.', 'error');
-                        },
-                        { enableHighAccuracy: true }
-                    );
-                } else {
-                    locationInfo.innerHTML = 'Geolocation tidak didukung oleh browser ini.';
-                    showNotification('Gagal', 'Geolocation tidak didukung oleh browser Anda.', 'error');
-                }
             }
 
             // Event listener untuk tombol di modal check-in
@@ -499,12 +472,12 @@
                 context.drawImage(checkinVideo, 0, 0, checkinCanvas.width, checkinCanvas.height);
                 const photoDataUrl = checkinCanvas.toDataURL('image/jpeg');
                 
-                recordAttendance('check-in', photoDataUrl, checkinLocationData);
+                recordAttendance('check-in', photoDataUrl);
                 
                 cancelCheckinBtn.click();
             });
 
-            function recordAttendance(type, photo, location) {
+            function recordAttendance(type, photo) {
                 const todayDate = getTodayDateString();
                 const currentTime = getCurrentTimeString();
                 
@@ -522,7 +495,6 @@
                         checkOutTime: null,
                         status: 'Hadir',
                         checkInPhoto: photo, // Data baru
-                        location: location,   // Data baru
                     };
                     attendanceRecords.push(newRecord);
                     showNotification('Berhasil', `Anda berhasil check-in pada pukul ${currentTime}.`, 'success');
@@ -640,13 +612,9 @@
                         checkIn = todayRecord.checkInTime;
                         checkOut = todayRecord.checkOutTime || '-';
                         if (todayRecord.checkInPhoto) {
-                            const locationText = todayRecord.location 
-                                ? `<a href="https://www.google.com/maps?q=${todayRecord.location.latitude},${todayRecord.location.longitude}" target="_blank" class="text-xs text-blue-500 hover:underline">Lihat Lokasi</a>` 
-                                : '';
                             photoCell = `
                                 <td class="p-3 text-center">
                                     <img src="${todayRecord.checkInPhoto}" alt="Foto" class="w-12 h-12 rounded-md object-cover cursor-pointer mx-auto" onclick="showImageModal('${todayRecord.checkInPhoto}')">
-                                    ${locationText}
                                 </td>
                             `;
                         }
@@ -856,3 +824,5 @@
     </script>
 </body>
 </html>
+
+
