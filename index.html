@@ -151,6 +151,7 @@
                         <a href="#rekap" class="tab-link active-tab border-blue-500 text-blue-600 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Rekap Absensi</a>
                         <a href="#izin" class="tab-link border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Persetujuan Izin</a>
                         <a href="#laporan" class="tab-link border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Laporan</a>
+                        <a href="#daftar" class="tab-link border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Daftarkan Siswa</a>
                     </nav>
                 </div>
             </div>
@@ -210,6 +211,46 @@
                         <i class="fa-solid fa-download mr-2"></i>Unduh Laporan
                     </button>
                 </div>
+                <div id="daftar" class="tab-content hidden bg-white p-6 rounded-xl shadow-md">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div>
+                            <h2 class="text-xl font-bold mb-4">Formulir Pendaftaran Siswa</h2>
+                            <form id="register-student-form">
+                                <div class="mb-4">
+                                    <label for="new-student-name" class="block text-gray-700 font-medium mb-2">Nama Lengkap Siswa</label>
+                                    <input type="text" id="new-student-name" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                                </div>
+                                <div class="mb-4">
+                                    <label for="new-student-username" class="block text-gray-700 font-medium mb-2">Username</label>
+                                    <input type="text" id="new-student-username" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                                </div>
+                                <div class="mb-4">
+                                    <label for="new-student-password" class="block text-gray-700 font-medium mb-2">Password</label>
+                                    <input type="text" id="new-student-password" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                                </div>
+                                <button type="submit" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition">
+                                    <i class="fa-solid fa-user-plus mr-2"></i>Daftarkan Siswa
+                                </button>
+                            </form>
+                        </div>
+                        <div>
+                             <h2 class="text-xl font-bold mb-4">Siswa Terdaftar</h2>
+                             <div class="overflow-y-auto max-h-96 border rounded-lg">
+                                <table class="w-full text-left">
+                                    <thead class="bg-gray-50 sticky top-0">
+                                        <tr class="border-b">
+                                            <th class="p-3 text-sm font-semibold">Nama</th>
+                                            <th class="p-3 text-sm font-semibold">Username</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="registered-students-list">
+                                        <!-- Daftar siswa akan diisi oleh JavaScript -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -242,7 +283,7 @@
     <div id="checkin-selfie-modal" class="modal-overlay hidden">
         <div class="modal-content">
             <h2 class="text-xl font-bold mb-4">Verifikasi Check-in dengan Foto</h2>
-            <p class="text-gray-600 mb-4">Posisikan wajah Anda di depan kamera. Lokasi Anda akan dicatat secara otomatis.</p>
+            <p class="text-gray-600 mb-4">Posisikan wajah Anda di depan kamera.</p>
             <video id="checkin-video-preview" class="w-full h-auto rounded-lg bg-gray-200" autoplay></video>
             <canvas id="checkin-selfie-canvas" class="hidden"></canvas>
             <div class="flex justify-between mt-4">
@@ -287,7 +328,7 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             // --- DATA DUMMY ---
-            const users = [
+            let users = [
                 { id: 's1', username: 'budi', password: '123', role: 'siswa', name: 'Budi Santoso' },
                 { id: 's2', username: 'ani', password: '123', role: 'siswa', name: 'Ani Lestari' },
                 { id: 's3', username: 'eko', password: '123', role: 'siswa', name: 'Eko Nugroho' },
@@ -318,6 +359,7 @@
             const checkinCanvas = document.getElementById('checkin-selfie-canvas');
             const captureCheckinBtn = document.getElementById('capture-checkin-btn');
             const cancelCheckinBtn = document.getElementById('cancel-checkin-btn');
+            const registerStudentForm = document.getElementById('register-student-form');
 
             function getTodayDateString() {
                 return new Date().toISOString().split('T')[0];
@@ -589,6 +631,7 @@
             function updateTeacherUI() {
                 renderTeacherRekap();
                 renderLeaveRequests();
+                renderStudentList();
                 setupTabs();
             }
             
@@ -736,6 +779,54 @@
                 document.body.removeChild(link);
                  showNotification('Berhasil', 'Laporan sedang diunduh.', 'success');
             });
+
+            // --- FUNGSI PENDAFTARAN SISWA ---
+            function renderStudentList() {
+                const listBody = document.getElementById('registered-students-list');
+                listBody.innerHTML = '';
+                const allStudents = users.filter(u => u.role === 'siswa');
+
+                if(allStudents.length === 0) {
+                    listBody.innerHTML = `<tr><td colspan="2" class="p-4 text-center text-gray-500">Belum ada siswa terdaftar.</td></tr>`;
+                    return;
+                }
+
+                allStudents.forEach(student => {
+                    const row = `
+                        <tr class="border-b">
+                            <td class="p-3">${student.name}</td>
+                            <td class="p-3 text-gray-600">${student.username}</td>
+                        </tr>
+                    `;
+                    listBody.innerHTML += row;
+                });
+            }
+
+            registerStudentForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const name = document.getElementById('new-student-name').value;
+                const username = document.getElementById('new-student-username').value;
+                const password = document.getElementById('new-student-password').value;
+
+                // Cek jika username sudah ada
+                if (users.some(u => u.username === username)) {
+                    showNotification('Gagal', `Username "${username}" sudah digunakan.`, 'error');
+                    return;
+                }
+
+                const newStudent = {
+                    id: 's' + Date.now(),
+                    username: username,
+                    password: password,
+                    role: 'siswa',
+                    name: name
+                };
+
+                users.push(newStudent);
+                showNotification('Berhasil', `Siswa "${name}" berhasil didaftarkan.`, 'success');
+                registerStudentForm.reset();
+                renderStudentList();
+            });
             
             // --- FUNGSI TAB GURU ---
             function setupTabs() {
@@ -824,5 +915,4 @@
     </script>
 </body>
 </html>
-
 
