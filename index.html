@@ -212,11 +212,48 @@
         </div>
     </div>
 
-    <!-- Other Modals: Selfie, Notifikasi, Check-in, Izin -->
+    <!-- Other Modals: Selfie, Notifikasi, Izin -->
     <div id="selfie-modal" class="modal-overlay hidden"><div class="modal-content"><h2 class="text-xl font-bold mb-4">Ambil Foto Bukti</h2><p class="text-gray-600 mb-4">Contoh: Surat dokter atau foto yang relevan.</p><video id="video-preview" autoplay></video><canvas id="selfie-canvas" class="hidden"></canvas><div class="flex justify-between mt-4"><button id="capture-btn" class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition mr-2">Ambil Foto</button><button id="cancel-selfie-btn" class="w-full bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-400 transition ml-2">Batal</button></div></div></div>
     <div id="notification-modal" class="modal-overlay hidden"><div class="modal-content text-center"><div id="notification-icon" class="text-5xl mb-4"></div><h2 id="notification-title" class="text-xl font-bold mb-2"></h2><p id="notification-message" class="text-gray-600 mb-6"></p><button id="close-notification-btn" class="bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700 transition">Tutup</button></div></div>
-    <div id="checkin-selfie-modal" class="modal-overlay hidden"><div class="modal-content"><h2 class="text-xl font-bold mb-4">Verifikasi Check-in dengan Foto</h2><p class="text-gray-600 mb-4">Posisikan wajah Anda di depan kamera.</p><video id="checkin-video-preview" autoplay></video><canvas id="checkin-selfie-canvas" class="hidden"></canvas><div class="flex justify-between mt-4"><button id="capture-checkin-btn" class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition mr-2 disabled:bg-gray-400 disabled:cursor-not-allowed" disabled><i class="fa-solid fa-camera mr-2"></i> Ambil Foto & Check-in</button><button id="cancel-checkin-btn" class="w-full bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-400 transition ml-2">Batal</button></div></div></div>
     <div id="leave-request-modal" class="modal-overlay hidden"><div class="modal-content"><h2 class="text-xl font-bold mb-4">Formulir Izin / Sakit</h2><form id="leave-request-form"><div class="mb-4"><label for="leave-type" class="block text-gray-700 font-medium mb-2">Jenis Pengajuan</label><select id="leave-type" class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"><option value="Sakit">Sakit</option><option value="Izin">Izin</option></select></div><div class="mb-4"><label for="leave-reason" class="block text-gray-700 font-medium mb-2">Keterangan</label><textarea id="leave-reason" rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required placeholder="Contoh: Ada acara keluarga di luar kota."></textarea></div><div class="mb-4"><button type="button" id="attach-photo-btn" class="w-full border border-blue-500 text-blue-600 font-bold py-2 px-4 rounded-lg hover:bg-blue-50 transition"><i class="fa-solid fa-camera mr-2"></i> Lampirkan Foto Bukti</button><img id="photo-preview" src="" class="hidden mt-4 w-24 h-24 object-cover rounded-lg"/></div><div class="flex justify-between mt-6"><button type="submit" class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition mr-2">Kirim Pengajuan</button><button type="button" id="cancel-leave-request-btn" class="w-full bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-400 transition ml-2">Batal</button></div></form></div></div>
+
+    <!-- Modal untuk Selfie Check-in (Struktur Baru) -->
+    <div id="checkin-selfie-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h2 class="text-xl font-bold mb-4">Verifikasi Check-in</h2>
+            
+            <!-- Live Camera View -->
+            <div id="checkin-live-view">
+                <p class="text-gray-600 mb-4">Posisikan wajah Anda di depan kamera.</p>
+                <video id="checkin-video-preview" class="w-full h-auto rounded-lg bg-gray-200" autoplay></video>
+            </div>
+
+            <!-- Photo Preview -->
+            <div id="checkin-preview-view" class="hidden">
+                <p class="text-gray-600 mb-4">Pastikan foto terlihat jelas sebelum konfirmasi.</p>
+                <img id="checkin-photo-preview" class="w-full h-auto rounded-lg">
+            </div>
+
+            <canvas id="checkin-selfie-canvas" class="hidden"></canvas>
+            
+            <div class="mt-4 flex flex-col sm:flex-row gap-2">
+                <!-- Initial Button -->
+                <button id="capture-checkin-photo-btn" class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition disabled:bg-gray-400">
+                    <i class="fa-solid fa-camera mr-2"></i> Ambil Foto
+                </button>
+                
+                <!-- Confirmation Buttons -->
+                <button id="retake-checkin-photo-btn" class="hidden w-full bg-gray-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-600 transition">
+                    <i class="fa-solid fa-arrows-rotate mr-2"></i> Ulangi
+                </button>
+                <button id="confirm-checkin-btn" class="hidden w-full bg-green-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-600 transition">
+                    <i class="fa-solid fa-check mr-2"></i> Konfirmasi & Check-in
+                </button>
+            </div>
+            <button id="cancel-checkin-btn" class="mt-2 w-full bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-300 transition">Batal</button>
+        </div>
+    </div>
+
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -269,6 +306,7 @@
             let leaveRequests = JSON.parse(localStorage.getItem('leaveRequests')) || [];
             let currentUser = null;
             let selfieDataUrl = null; 
+            let tempCheckinPhoto = null;
 
             // --- ELEMEN DOM ---
             const loginPage = document.getElementById('login-page');
@@ -277,6 +315,16 @@
             const teacherDashboard = document.getElementById('teacher-dashboard');
             const registerStudentForm = document.getElementById('register-student-form');
             const profileModal = document.getElementById('profile-modal');
+            const checkinSelfieModal = document.getElementById('checkin-selfie-modal');
+            const checkinVideo = document.getElementById('checkin-video-preview');
+            const checkinCanvas = document.getElementById('checkin-selfie-canvas');
+            const checkinLiveView = document.getElementById('checkin-live-view');
+            const checkinPreviewView = document.getElementById('checkin-preview-view');
+            const checkinPhotoPreview = document.getElementById('checkin-photo-preview');
+            const captureCheckinPhotoBtn = document.getElementById('capture-checkin-photo-btn');
+            const retakeCheckinPhotoBtn = document.getElementById('retake-checkin-photo-btn');
+            const confirmCheckinBtn = document.getElementById('confirm-checkin-btn');
+            const cancelCheckinBtn = document.getElementById('cancel-checkin-btn');
 
             // --- FUNGSI UTILITAS & SETUP ---
             const getTodayDateString = () => new Date().toISOString().split('T')[0];
@@ -345,28 +393,46 @@
             }
 
             function updateStudentUI() {
-                const todayDate = getTodayDateString();
-                const todayRecord = attendanceRecords.find(r => r.userId === currentUser.id && r.date === todayDate);
                 const checkInBtn = document.getElementById('check-in-btn');
                 const checkOutBtn = document.getElementById('check-out-btn');
+                const attendanceStatus = document.getElementById('attendance-status');
+                const todayRecord = attendanceRecords.find(r => r.userId === currentUser.id && r.date === getTodayDateString());
+                
+                const now = new Date();
+                const currentHour = now.getHours();
+                const checkInStart = 6, checkInEnd = 10;
+                const checkOutStart = 14, checkOutEnd = 18;
+
+                checkInBtn.disabled = true;
+                checkOutBtn.disabled = true;
 
                 if (todayRecord) {
-                    checkInBtn.disabled = true;
-                    document.getElementById('attendance-status').textContent = `Anda check-in pada pukul ${todayRecord.checkInTime}.`;
+                    attendanceStatus.textContent = `Anda check-in pada pukul ${todayRecord.checkInTime}.`;
                     if (todayRecord.checkOutTime) {
-                        checkOutBtn.disabled = true;
-                        document.getElementById('attendance-status').textContent += ` Dan check-out pada pukul ${todayRecord.checkOutTime}.`;
+                        attendanceStatus.textContent += ` Dan check-out pada pukul ${todayRecord.checkOutTime}.`;
                     } else {
-                        checkOutBtn.disabled = false;
+                        if (currentHour >= checkOutStart && currentHour < checkOutEnd) {
+                            checkOutBtn.disabled = false;
+                        } else {
+                            attendanceStatus.textContent += ' Belum waktunya untuk check-out.';
+                        }
                     }
                 } else {
-                    checkInBtn.disabled = false;
-                    checkOutBtn.disabled = true;
-                    document.getElementById('attendance-status').textContent = 'Anda belum melakukan absensi hari ini.';
+                    if (currentHour >= checkInStart && currentHour < checkInEnd) {
+                        checkInBtn.disabled = false;
+                        attendanceStatus.textContent = 'Anda belum melakukan absensi hari ini.';
+                    } else {
+                        if (currentHour < checkInStart) {
+                            attendanceStatus.textContent = `Check-in dibuka pukul ${String(checkInStart).padStart(2, '0')}:00.`;
+                        } else {
+                            attendanceStatus.textContent = 'Waktu untuk check-in hari ini telah berakhir.';
+                        }
+                    }
                 }
                 renderStudentHistory();
                 renderStudentRankInfo();
             }
+
 
             function updateTeacherUI() {
                 renderTeacherRekap();
@@ -377,10 +443,7 @@
                 setupTabs();
             }
             
-            // --- FUNGSI SISWA ---
-            document.getElementById('check-in-btn').addEventListener('click', () => startCheckInCapture());
-            document.getElementById('check-out-btn').addEventListener('click', () => recordAttendance('check-out'));
-
+            // --- FUNGSI SISWA & CHECK-IN/OUT ---
             function renderStudentHistory() {
                 const historyBody = document.getElementById('student-history');
                 historyBody.innerHTML = '';
@@ -428,6 +491,45 @@
                 saveDataToLocalStorage();
                 updateStudentUI();
             }
+
+            function startCheckInCapture() {
+                checkinSelfieModal.classList.remove('hidden');
+                checkinLiveView.classList.remove('hidden');
+                checkinPreviewView.classList.add('hidden');
+                captureCheckinPhotoBtn.classList.remove('hidden');
+                retakeCheckinPhotoBtn.classList.add('hidden');
+                confirmCheckinBtn.classList.add('hidden');
+                captureCheckinPhotoBtn.disabled = true;
+
+                startCamera(checkinVideo, checkinSelfieModal, () => {
+                    captureCheckinPhotoBtn.disabled = false;
+                });
+            }
+
+            captureCheckinPhotoBtn.addEventListener('click', () => {
+                tempCheckinPhoto = capturePhoto(checkinVideo, checkinCanvas);
+                checkinPhotoPreview.src = tempCheckinPhoto;
+                stopCamera(checkinVideo);
+                checkinLiveView.classList.add('hidden');
+                checkinPreviewView.classList.remove('hidden');
+                captureCheckinPhotoBtn.classList.add('hidden');
+                retakeCheckinPhotoBtn.classList.remove('hidden');
+                confirmCheckinBtn.classList.remove('hidden');
+            });
+
+            retakeCheckinPhotoBtn.addEventListener('click', startCheckInCapture);
+
+            confirmCheckinBtn.addEventListener('click', () => {
+                recordAttendance('check-in', tempCheckinPhoto);
+                cancelCheckinBtn.click();
+            });
+
+            cancelCheckinBtn.addEventListener('click', () => {
+                checkinSelfieModal.classList.add('hidden');
+                stopCamera(checkinVideo);
+                tempCheckinPhoto = null;
+            });
+
 
             // --- PROFIL SISWA ---
             document.getElementById('view-profile-btn').addEventListener('click', () => {
@@ -647,7 +749,7 @@
                 });
             };
 
-            // Event Listeners untuk modals (Izin & Check-in)
+            // Event Listeners untuk modals (Izin)
             function setupModalListeners() {
                 const selfieModal = document.getElementById('selfie-modal');
                 const videoPreview = document.getElementById('video-preview');
@@ -668,19 +770,6 @@
                      document.getElementById('leave-request-form').reset();
                      photoPreview.classList.add('hidden');
                      selfieDataUrl = null;
-                });
-                
-                const checkinSelfieModal = document.getElementById('checkin-selfie-modal');
-                const checkinVideo = document.getElementById('checkin-video-preview');
-                const checkinCanvas = document.getElementById('checkin-selfie-canvas');
-                const captureCheckinBtn = document.getElementById('capture-checkin-btn');
-                const startCheckInCapture = () => startCamera(checkinVideo, checkinSelfieModal, () => captureCheckinBtn.disabled = false);
-                // document.getElementById('check-in-btn').addEventListener('click', startCheckInCapture); // Already set
-                document.getElementById('cancel-checkin-btn').addEventListener('click', () => { checkinSelfieModal.classList.add('hidden'); stopCamera(checkinVideo); });
-                captureCheckinBtn.addEventListener('click', () => {
-                    const photo = capturePhoto(checkinVideo, checkinCanvas);
-                    recordAttendance('check-in', photo);
-                    document.getElementById('cancel-checkin-btn').click();
                 });
             }
             
