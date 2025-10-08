@@ -402,11 +402,11 @@
                 const currentHour = now.getHours();
                 const currentMinute = now.getMinutes();
 
-                // Waktu Check-in: 06:30 - 09:59
-                const isCheckInTime = (currentHour > 6 || (currentHour === 6 && currentMinute >= 30)) && currentHour < 10;
+                // Waktu Check-in: 06:30 - 14:59
+                const isCheckInTime = (currentHour > 6 || (currentHour === 6 && currentMinute >= 30)) && currentHour < 15;
                 
-                // Waktu Check-out: 14:00 - 14:59
-                const isCheckOutTime = currentHour >= 14 && currentHour < 15;
+                // Waktu Check-out: 12:00 - 17:59
+                const isCheckOutTime = currentHour >= 12 && currentHour < 18;
 
                 checkInBtn.disabled = true;
                 checkOutBtn.disabled = true;
@@ -419,7 +419,7 @@
                         if (isCheckOutTime) {
                             checkOutBtn.disabled = false;
                         } else {
-                             if(currentHour >= 15) {
+                             if(currentHour >= 18) {
                                 attendanceStatus.textContent += ' Waktu check-out sudah berakhir.';
                              } else {
                                 attendanceStatus.textContent += ' Belum waktunya untuk check-out.';
