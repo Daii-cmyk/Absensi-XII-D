@@ -400,8 +400,13 @@
                 
                 const now = new Date();
                 const currentHour = now.getHours();
-                const checkInStart = 6, checkInEnd = 10;
-                const checkOutStart = 14, checkOutEnd = 18;
+                const currentMinute = now.getMinutes();
+
+                // Waktu Check-in: 06:30 - 09:59
+                const isCheckInTime = (currentHour > 6 || (currentHour === 6 && currentMinute >= 30)) && currentHour < 10;
+                
+                // Waktu Check-out: 14:00 - 14:59
+                const isCheckOutTime = currentHour >= 14 && currentHour < 15;
 
                 checkInBtn.disabled = true;
                 checkOutBtn.disabled = true;
@@ -411,19 +416,23 @@
                     if (todayRecord.checkOutTime) {
                         attendanceStatus.textContent += ` Dan check-out pada pukul ${todayRecord.checkOutTime}.`;
                     } else {
-                        if (currentHour >= checkOutStart && currentHour < checkOutEnd) {
+                        if (isCheckOutTime) {
                             checkOutBtn.disabled = false;
                         } else {
-                            attendanceStatus.textContent += ' Belum waktunya untuk check-out.';
+                             if(currentHour >= 15) {
+                                attendanceStatus.textContent += ' Waktu check-out sudah berakhir.';
+                             } else {
+                                attendanceStatus.textContent += ' Belum waktunya untuk check-out.';
+                             }
                         }
                     }
                 } else {
-                    if (currentHour >= checkInStart && currentHour < checkInEnd) {
+                    if (isCheckInTime) {
                         checkInBtn.disabled = false;
                         attendanceStatus.textContent = 'Anda belum melakukan absensi hari ini.';
                     } else {
-                        if (currentHour < checkInStart) {
-                            attendanceStatus.textContent = `Check-in dibuka pukul ${String(checkInStart).padStart(2, '0')}:00.`;
+                        if (currentHour < 6 || (currentHour === 6 && currentMinute < 30)) {
+                            attendanceStatus.textContent = `Check-in dibuka pukul 06:30.`;
                         } else {
                             attendanceStatus.textContent = 'Waktu untuk check-in hari ini telah berakhir.';
                         }
@@ -444,6 +453,9 @@
             }
             
             // --- FUNGSI SISWA & CHECK-IN/OUT ---
+            document.getElementById('check-in-btn').addEventListener('click', () => startCheckInCapture());
+            document.getElementById('check-out-btn').addEventListener('click', () => recordAttendance('check-out'));
+
             function renderStudentHistory() {
                 const historyBody = document.getElementById('student-history');
                 historyBody.innerHTML = '';
@@ -771,6 +783,7 @@
                      photoPreview.classList.add('hidden');
                      selfieDataUrl = null;
                 });
+                document.getElementById('check-in-btn').addEventListener('click', startCheckInCapture);
             }
             
             // --- Semuanya digabung ke dalam satu setup ---
