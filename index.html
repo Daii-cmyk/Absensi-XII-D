@@ -31,10 +31,15 @@
         }
         .modal-content {
             background-color: white;
-            padding: 2rem;
+            padding: 1.5rem; /* Padding lebih kecil di mobile */
             border-radius: 0.5rem;
             max-width: 500px;
             width: 90%;
+        }
+        @media (min-width: 640px) {
+            .modal-content {
+                padding: 2rem; /* Padding kembali normal di desktop */
+            }
         }
         #video-preview, #checkin-video-preview {
             width: 100%;
@@ -52,252 +57,135 @@
 <body class="bg-gray-100 text-gray-800">
 
     <!-- Container Utama Aplikasi -->
-    <div id="app-container" class="max-w-4xl mx-auto p-4 md:p-6">
+    <div id="app-container" class="w-full min-h-screen">
 
         <!-- Halaman Login -->
-        <div id="login-page" class="bg-white/80 backdrop-blur-md border border-white/20 p-8 rounded-2xl shadow-lg max-w-md mx-auto mt-10">
-            <div class="text-center mb-4">
-                <i class="fas fa-fingerprint text-blue-600 text-6xl"></i>
-            </div>
-            <h1 class="text-3xl font-bold text-center text-gray-800 mb-2">Absensi XII-D</h1>
-            <p class="text-center text-gray-600 mb-8">Silakan login untuk melanjutkan</p>
-            <form id="login-form">
-                <div class="mb-4">
-                    <label for="username" class="block text-gray-700 font-medium mb-2">Username</label>
-                    <input type="text" id="username" class="w-full px-4 py-2 bg-white/70 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+        <div id="login-page" class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white/80 backdrop-blur-md border border-white/20 p-6 sm:p-8 rounded-2xl shadow-lg max-w-md w-full">
+                <div class="text-center mb-4">
+                    <i class="fas fa-fingerprint text-blue-600 text-5xl sm:text-6xl"></i>
                 </div>
-                <div class="mb-4">
-                    <label for="password" class="block text-gray-700 font-medium mb-2">Password</label>
-                    <input type="password" id="password" class="w-full px-4 py-2 bg-white/70 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
-                </div>
-                <div class="mb-6">
-                    <label for="role" class="block text-gray-700 font-medium mb-2">Login sebagai</label>
-                    <select id="role" class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white/70 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <option value="siswa">Siswa</option>
-                        <option value="guru">Guru</option>
-                    </select>
-                </div>
-                <button type="submit" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition duration-300 shadow-lg hover:shadow-blue-500/50">Login</button>
-            </form>
-            <div id="login-error" class="text-red-600 bg-red-100 p-3 rounded-lg text-center mt-4 hidden"></div>
-        </div>
-
-        <!-- Dashboard Siswa -->
-        <div id="student-dashboard" class="hidden">
-            <header class="bg-white p-4 rounded-xl shadow-md mb-6 flex justify-between items-center">
-                <div class="flex items-center gap-4">
-                    <img id="student-profile-img-header" src="" alt="Foto Profil" class="w-12 h-12 rounded-full object-cover">
-                    <div>
-                        <h1 class="text-2xl font-bold text-blue-600">Dashboard Siswa</h1>
-                        <p class="text-gray-600">Selamat datang, <span id="student-name" class="font-semibold"></span>!</p>
+                <h1 class="text-2xl sm:text-3xl font-bold text-center text-gray-800 mb-2">Absensi XII-D</h1>
+                <p class="text-center text-gray-600 mb-6 sm:mb-8">Silakan login untuk melanjutkan</p>
+                <form id="login-form">
+                    <div class="mb-4">
+                        <label for="username" class="block text-gray-700 font-medium mb-2">Username</label>
+                        <input type="text" id="username" class="w-full px-4 py-2 bg-white/70 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
                     </div>
-                </div>
-                <button id="logout-student" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition">
-                    <i class="fa-solid fa-right-from-bracket mr-2"></i>Logout
-                </button>
-            </header>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <!-- Kolom Absensi -->
-                <div class="bg-white p-6 rounded-xl shadow-md">
-                    <h2 class="text-xl font-bold mb-4">Absensi Hari Ini</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <button id="check-in-btn" class="bg-green-500 text-white font-bold py-4 rounded-lg hover:bg-green-600 transition text-lg disabled:bg-gray-400 disabled:cursor-not-allowed">
-                            <i class="fa-solid fa-arrow-right-to-bracket mr-2"></i> Check-in
-                        </button>
-                        <button id="check-out-btn" class="bg-orange-500 text-white font-bold py-4 rounded-lg hover:bg-orange-600 transition text-lg disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>
-                            <i class="fa-solid fa-door-open mr-2"></i> Check-out
-                        </button>
+                    <div class="mb-4">
+                        <label for="password" class="block text-gray-700 font-medium mb-2">Password</label>
+                        <input type="password" id="password" class="w-full px-4 py-2 bg-white/70 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
                     </div>
-                    <div id="attendance-status" class="mt-4 text-center font-medium text-gray-700"></div>
-                </div>
-
-                <!-- Kolom Aksi Cepat -->
-                <div class="bg-white p-6 rounded-xl shadow-md">
-                    <h2 class="text-xl font-bold mb-4">Aksi Cepat</h2>
-                    <div class="flex flex-col space-y-3">
-                        <button id="view-profile-btn" class="w-full bg-blue-500 text-white font-bold py-3 rounded-lg hover:bg-blue-600 transition text-lg">
-                            <i class="fa-solid fa-user mr-2"></i> Lihat Profil
-                        </button>
-                        <button id="leave-request-btn" class="w-full bg-yellow-500 text-white font-bold py-3 rounded-lg hover:bg-yellow-600 transition text-lg">
-                            <i class="fa-solid fa-file-alt mr-2"></i> Ajukan Izin
-                        </button>
+                    <div class="mb-6">
+                        <label for="role" class="block text-gray-700 font-medium mb-2">Login sebagai</label>
+                        <select id="role" class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white/70 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="siswa">Siswa</option>
+                            <option value="guru">Guru</option>
+                        </select>
                     </div>
-                </div>
-            </div>
-
-            <!-- Diagram Peringkat Kehadiran -->
-            <div class="bg-white p-6 rounded-xl shadow-md mb-6">
-                <h2 class="text-xl font-bold mb-4">Peringkat Kehadiran Anda</h2>
-                <div id="student-rank-diagram-container">
-                    <!-- Diagram akan dirender oleh JavaScript di sini -->
-                </div>
-            </div>
-
-            <div class="bg-white p-6 rounded-xl shadow-md">
-                <h2 class="text-xl font-bold mb-4">Riwayat Kehadiran</h2>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left">
-                        <thead>
-                            <tr class="bg-gray-100">
-                                <th class="p-3">Tanggal</th>
-                                <th class="p-3">Check-in</th>
-                                <th class="p-3">Check-out</th>
-                                <th class="p-3">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="student-history"></tbody>
-                    </table>
-                </div>
+                    <button type="submit" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition duration-300 shadow-lg hover:shadow-blue-500/50">Login</button>
+                </form>
+                <div id="login-error" class="text-red-600 bg-red-100 p-3 rounded-lg text-center mt-4 hidden"></div>
             </div>
         </div>
 
-        <!-- Dashboard Guru -->
-        <div id="teacher-dashboard" class="hidden">
-             <header class="bg-white p-4 rounded-xl shadow-md mb-6 flex justify-between items-center">
-                <div>
-                    <h1 class="text-2xl font-bold text-blue-600">Dashboard Guru</h1>
-                    <p class="text-gray-600">Selamat datang, <span id="teacher-name" class="font-semibold"></span>!</p>
-                </div>
-                <button id="logout-teacher" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition">
-                    <i class="fa-solid fa-right-from-bracket mr-2"></i>Logout
-                </button>
-            </header>
-            
-            <div class="mb-6">
-                <div class="border-b border-gray-200">
-                    <nav id="teacher-tabs" class="-mb-px flex space-x-6 overflow-x-auto" aria-label="Tabs">
-                        <a href="#rekap" class="tab-link active-tab border-blue-500 text-blue-600 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Rekap Absensi</a>
-                        <a href="#izin" class="tab-link border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Persetujuan Izin</a>
-                        <a href="#peringkat" class="tab-link border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Peringkat Absen</a>
-                        <a href="#daftar" class="tab-link border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Daftarkan Siswa</a>
-                        <a href="#laporan" class="tab-link border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Laporan</a>
-                    </nav>
-                </div>
-            </div>
+        <!-- Dashboard Konten (muncul setelah login) -->
+        <div id="dashboard-content" class="hidden max-w-6xl mx-auto p-2 sm:p-4 md:p-6">
+            <!-- Dashboard Siswa -->
+            <div id="student-dashboard" class="hidden">
+                <header class="bg-white p-4 rounded-xl shadow-md mb-6 flex flex-col sm:flex-row justify-between items-center gap-4">
+                    <div class="flex items-center gap-4 w-full sm:w-auto">
+                        <img id="student-profile-img-header" src="" alt="Foto Profil" class="w-12 h-12 rounded-full object-cover">
+                        <div>
+                            <h1 class="text-xl md:text-2xl font-bold text-blue-600">Dashboard Siswa</h1>
+                            <p class="text-gray-600 text-sm sm:text-base">Selamat datang, <span id="student-name" class="font-semibold"></span>!</p>
+                        </div>
+                    </div>
+                    <button id="logout-student" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition w-full sm:w-auto">
+                        <i class="fa-solid fa-right-from-bracket mr-2"></i>Logout
+                    </button>
+                </header>
 
-            <div id="teacher-tab-content">
-                <div id="rekap" class="tab-content bg-white p-6 rounded-xl shadow-md">
-                    <h2 class="text-xl font-bold mb-4">Rekap Absensi Siswa Hari Ini</h2>
-                     <div class="overflow-x-auto">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div class="bg-white p-6 rounded-xl shadow-md">
+                        <h2 class="text-lg sm:text-xl font-bold mb-4">Absensi Hari Ini</h2>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <button id="check-in-btn" class="bg-green-500 text-white font-bold py-3 sm:py-4 rounded-lg hover:bg-green-600 transition text-base md:text-lg disabled:bg-gray-400 disabled:cursor-not-allowed">
+                                <i class="fa-solid fa-arrow-right-to-bracket mr-2"></i> Check-in
+                            </button>
+                            <button id="check-out-btn" class="bg-orange-500 text-white font-bold py-3 sm:py-4 rounded-lg hover:bg-orange-600 transition text-base md:text-lg disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>
+                                <i class="fa-solid fa-door-open mr-2"></i> Check-out
+                            </button>
+                        </div>
+                        <div id="attendance-status" class="mt-4 text-center font-medium text-gray-700"></div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-xl shadow-md">
+                        <h2 class="text-lg sm:text-xl font-bold mb-4">Aksi Cepat</h2>
+                        <div class="flex flex-col space-y-3">
+                            <button id="view-profile-btn" class="w-full bg-blue-500 text-white font-bold py-3 rounded-lg hover:bg-blue-600 transition text-base md:text-lg">
+                                <i class="fa-solid fa-user mr-2"></i> Lihat Profil
+                            </button>
+                            <button id="leave-request-btn" class="w-full bg-yellow-500 text-white font-bold py-3 rounded-lg hover:bg-yellow-600 transition text-base md:text-lg">
+                                <i class="fa-solid fa-file-alt mr-2"></i> Ajukan Izin
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-xl shadow-md mb-6">
+                    <h2 class="text-lg sm:text-xl font-bold mb-4">Peringkat Kehadiran Anda</h2>
+                    <div id="student-rank-diagram-container"></div>
+                </div>
+
+                <div class="bg-white p-6 rounded-xl shadow-md">
+                    <h2 class="text-lg sm:text-xl font-bold mb-4">Riwayat Kehadiran</h2>
+                    <div class="overflow-x-auto">
                         <table class="w-full text-left">
                             <thead>
                                 <tr class="bg-gray-100">
-                                    <th class="p-3">Nama Siswa</th>
+                                    <th class="p-3">Tanggal</th>
                                     <th class="p-3">Check-in</th>
-                                    <th class="p-3">Foto</th>
                                     <th class="p-3">Check-out</th>
                                     <th class="p-3">Status</th>
                                 </tr>
                             </thead>
-                            <tbody id="teacher-rekap"></tbody>
+                            <tbody id="student-history"></tbody>
                         </table>
                     </div>
                 </div>
-                <div id="izin" class="tab-content hidden bg-white p-6 rounded-xl shadow-md">
-                     <h2 class="text-xl font-bold mb-4">Persetujuan Izin & Sakit</h2>
-                     <div class="overflow-x-auto">
-                        <table class="w-full text-left">
-                            <thead>
-                                <tr class="bg-gray-100">
-                                    <th class="p-3">Nama Siswa</th>
-                                    <th class="p-3">Tanggal</th>
-                                    <th class="p-3">Keterangan</th>
-                                    <th class="p-3">Status</th>
-                                    <th class="p-3">Bukti</th>
-                                    <th class="p-3">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody id="leave-requests"></tbody>
-                        </table>
+            </div>
+
+            <!-- Dashboard Guru -->
+            <div id="teacher-dashboard" class="hidden">
+                 <header class="bg-white p-4 rounded-xl shadow-md mb-6 flex flex-col sm:flex-row justify-between items-center gap-4">
+                    <div>
+                        <h1 class="text-xl md:text-2xl font-bold text-blue-600">Dashboard Guru</h1>
+                        <p class="text-gray-600 text-sm sm:text-base">Selamat datang, <span id="teacher-name" class="font-semibold"></span>!</p>
                     </div>
-                </div>
-                <div id="peringkat" class="tab-content hidden bg-white p-6 rounded-xl shadow-md">
-                    <div class="flex justify-between items-center mb-4">
-                         <h2 class="text-xl font-bold">Peringkat Kehadiran Siswa</h2>
-                         <div>
-                            <label for="month-filter" class="text-sm font-medium mr-2">Filter Bulan:</label>
-                            <select id="month-filter" class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                                <!-- Opsi bulan akan diisi oleh JavaScript -->
-                            </select>
-                         </div>
-                    </div>
-                     <div class="overflow-x-auto">
-                        <table class="w-full text-left">
-                            <thead class="bg-gray-50">
-                                <tr class="border-b">
-                                    <th class="p-3 text-sm font-semibold">Peringkat</th>
-                                    <th class="p-3 text-sm font-semibold">Nama Siswa</th>
-                                    <th class="p-3 text-sm font-semibold">Jumlah Hadir</th>
-                                    <th class="p-3 text-sm font-semibold">Persentase</th>
-                                </tr>
-                            </thead>
-                            <tbody id="ranking-list"></tbody>
-                        </table>
-                    </div>
-                </div>
-                <div id="laporan" class="tab-content hidden bg-white p-6 rounded-xl shadow-md">
-                    <h2 class="text-xl font-bold mb-4">Laporan Kehadiran</h2>
-                    <p class="mb-4 text-gray-600">Pilih rentang tanggal untuk mengunduh laporan.</p>
-                    <div class="flex items-center space-x-4 mb-4">
-                        <div>
-                            <label for="start-date" class="block text-sm font-medium text-gray-700">Tanggal Mulai</label>
-                            <input type="date" id="start-date" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                        </div>
-                        <div>
-                            <label for="end-date" class="block text-sm font-medium text-gray-700">Tanggal Akhir</label>
-                            <input type="date" id="end-date" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                        </div>
-                    </div>
-                    <button id="download-report-btn" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition">
-                        <i class="fa-solid fa-download mr-2"></i>Unduh Laporan (Excel)
+                    <button id="logout-teacher" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition w-full sm:w-auto">
+                        <i class="fa-solid fa-right-from-bracket mr-2"></i>Logout
                     </button>
-                </div>
-                <div id="daftar" class="tab-content hidden bg-white p-6 rounded-xl shadow-md">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div>
-                            <h2 class="text-xl font-bold mb-4">Formulir Pendaftaran Siswa</h2>
-                            <form id="register-student-form">
-                                <div class="mb-4">
-                                    <label for="new-student-name" class="block text-gray-700 font-medium mb-2">Nama Lengkap Siswa</label>
-                                    <input type="text" id="new-student-name" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
-                                </div>
-                                <div class="mb-4">
-                                    <label for="new-student-nisn" class="block text-gray-700 font-medium mb-2">NISN</label>
-                                    <input type="text" id="new-student-nisn" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required pattern="\d{10}" title="NISN harus terdiri dari 10 digit angka">
-                                </div>
-                                <div class="mb-4">
-                                    <label for="new-student-username" class="block text-gray-700 font-medium mb-2">Username</label>
-                                    <input type="text" id="new-student-username" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
-                                </div>
-                                <div class="mb-4">
-                                    <label for="new-student-password" class="block text-gray-700 font-medium mb-2">Password</label>
-                                    <input type="text" id="new-student-password" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
-                                </div>
-                                <div class="mb-4">
-                                    <label for="new-student-photo" class="block text-gray-700 font-medium mb-2">Foto Profil</label>
-                                    <input type="file" id="new-student-photo" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" accept="image/*" required>
-                                </div>
-                                <button type="submit" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition">
-                                    <i class="fa-solid fa-user-plus mr-2"></i>Daftarkan Siswa
-                                </button>
-                            </form>
-                        </div>
-                        <div>
-                             <h2 class="text-xl font-bold mb-4">Siswa Terdaftar</h2>
-                             <div class="overflow-y-auto max-h-96 border rounded-lg">
-                                <table class="w-full text-left">
-                                    <thead class="bg-gray-50 sticky top-0">
-                                        <tr class="border-b">
-                                            <th class="p-3 text-sm font-semibold">Nama</th>
-                                            <th class="p-3 text-sm font-semibold">Username</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="registered-students-list"></tbody>
-                                </table>
-                            </div>
-                        </div>
+                </header>
+                
+                <div class="mb-6">
+                    <div class="border-b border-gray-200">
+                        <nav id="teacher-tabs" class="-mb-px flex space-x-4 md:space-x-6 overflow-x-auto" aria-label="Tabs">
+                            <a href="#rekap" class="tab-link active-tab border-blue-500 text-blue-600 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Rekap Absensi</a>
+                            <a href="#izin" class="tab-link border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Persetujuan Izin</a>
+                            <a href="#peringkat" class="tab-link border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Peringkat Absen</a>
+                            <a href="#daftar" class="tab-link border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Daftarkan Siswa</a>
+                            <a href="#laporan" class="tab-link border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Laporan</a>
+                        </nav>
                     </div>
+                </div>
+
+                <div id="teacher-tab-content">
+                    <div id="rekap" class="tab-content bg-white p-6 rounded-xl shadow-md"><h2 class="text-xl font-bold mb-4">Rekap Absensi Siswa Hari Ini</h2><div class="overflow-x-auto"><table class="w-full text-left"><thead><tr class="bg-gray-100"><th class="p-3">Nama Siswa</th><th class="p-3">Check-in</th><th class="p-3">Foto</th><th class="p-3">Check-out</th><th class="p-3">Status</th></tr></thead><tbody id="teacher-rekap"></tbody></table></div></div>
+                    <div id="izin" class="tab-content hidden bg-white p-6 rounded-xl shadow-md"><h2 class="text-xl font-bold mb-4">Persetujuan Izin & Sakit</h2><div class="overflow-x-auto"><table class="w-full text-left"><thead><tr class="bg-gray-100"><th class="p-3">Nama Siswa</th><th class="p-3">Tanggal</th><th class="p-3">Keterangan</th><th class="p-3">Status</th><th class="p-3">Bukti</th><th class="p-3">Aksi</th></tr></thead><tbody id="leave-requests"></tbody></table></div></div>
+                    <div id="peringkat" class="tab-content hidden bg-white p-6 rounded-xl shadow-md"><div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4"><h2 class="text-xl font-bold">Peringkat Kehadiran Siswa</h2><div><label for="month-filter" class="text-sm font-medium mr-2">Filter Bulan:</label><select id="month-filter" class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"></select></div></div><div class="overflow-x-auto"><table class="w-full text-left"><thead class="bg-gray-50"><tr class="border-b"><th class="p-3 text-sm font-semibold">Peringkat</th><th class="p-3 text-sm font-semibold">Nama Siswa</th><th class="p-3 text-sm font-semibold">Jumlah Hadir</th><th class="p-3 text-sm font-semibold">Persentase</th></tr></thead><tbody id="ranking-list"></tbody></table></div></div>
+                    <div id="laporan" class="tab-content hidden bg-white p-6 rounded-xl shadow-md"><h2 class="text-xl font-bold mb-4">Laporan Kehadiran</h2><p class="mb-4 text-gray-600">Pilih rentang tanggal untuk mengunduh laporan.</p><div class="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-4 mb-4"><div><label for="start-date" class="block text-sm font-medium text-gray-700">Tanggal Mulai</label><input type="date" id="start-date" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"></div><div><label for="end-date" class="block text-sm font-medium text-gray-700">Tanggal Akhir</label><input type="date" id="end-date" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"></div></div><button id="download-report-btn" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition"><i class="fa-solid fa-download mr-2"></i>Unduh Laporan (Excel)</button></div>
+                    <div id="daftar" class="tab-content hidden bg-white p-6 rounded-xl shadow-md"><div class="grid grid-cols-1 md:grid-cols-2 gap-8"><div_> <h2 class="text-xl font-bold mb-4">Formulir Pendaftaran Siswa</h2><form id="register-student-form"><div class="mb-4"><label for="new-student-name" class="block text-gray-700 font-medium mb-2">Nama Lengkap Siswa</label><input type="text" id="new-student-name" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required></div><div class="mb-4"><label for="new-student-nisn" class="block text-gray-700 font-medium mb-2">NISN</label><input type="text" id="new-student-nisn" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required pattern="\d{10}" title="NISN harus terdiri dari 10 digit angka"></div><div class="mb-4"><label for="new-student-username" class="block text-gray-700 font-medium mb-2">Username</label><input type="text" id="new-student-username" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required></div><div class="mb-4"><label for="new-student-password" class="block text-gray-700 font-medium mb-2">Password</label><input type="text" id="new-student-password" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required></div><div class="mb-4"><label for="new-student-photo" class="block text-gray-700 font-medium mb-2">Foto Profil</label><input type="file" id="new-student-photo" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" accept="image/*" required></div><button type="submit" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition"><i class="fa-solid fa-user-plus mr-2"></i>Daftarkan Siswa</button></form></div_><div><h2 class="text-xl font-bold mb-4">Siswa Terdaftar</h2><div class="overflow-y-auto max-h-96 border rounded-lg"><table class="w-full text-left"><thead class="bg-gray-50 sticky top-0"><tr class="border-b"><th class="p-3 text-sm font-semibold">Nama</th><th class="p-3 text-sm font-semibold">Username</th></tr></thead><tbody id="registered-students-list"></tbody></table></div></div></div></div>
                 </div>
             </div>
         </div>
@@ -319,18 +207,10 @@
     </div>
 
     <!-- Other Modals: Selfie, Notifikasi, Check-in, Izin -->
-    <div id="selfie-modal" class="modal-overlay hidden">
-        <div class="modal-content"><h2 class="text-xl font-bold mb-4">Ambil Foto Bukti</h2><p class="text-gray-600 mb-4">Contoh: Surat dokter atau foto yang relevan.</p><video id="video-preview" autoplay></video><canvas id="selfie-canvas" class="hidden"></canvas><div class="flex justify-between mt-4"><button id="capture-btn" class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition mr-2">Ambil Foto</button><button id="cancel-selfie-btn" class="w-full bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-400 transition ml-2">Batal</button></div></div>
-    </div>
-    <div id="notification-modal" class="modal-overlay hidden">
-        <div class="modal-content text-center"><div id="notification-icon" class="text-5xl mb-4"></div><h2 id="notification-title" class="text-xl font-bold mb-2"></h2><p id="notification-message" class="text-gray-600 mb-6"></p><button id="close-notification-btn" class="bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700 transition">Tutup</button></div>
-    </div>
-    <div id="checkin-selfie-modal" class="modal-overlay hidden">
-        <div class="modal-content"><h2 class="text-xl font-bold mb-4">Verifikasi Check-in dengan Foto</h2><p class="text-gray-600 mb-4">Posisikan wajah Anda di depan kamera.</p><video id="checkin-video-preview" autoplay></video><canvas id="checkin-selfie-canvas" class="hidden"></canvas><div class="flex justify-between mt-4"><button id="capture-checkin-btn" class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition mr-2 disabled:bg-gray-400 disabled:cursor-not-allowed" disabled><i class="fa-solid fa-camera mr-2"></i> Ambil Foto & Check-in</button><button id="cancel-checkin-btn" class="w-full bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-400 transition ml-2">Batal</button></div></div>
-    </div>
-    <div id="leave-request-modal" class="modal-overlay hidden">
-        <div class="modal-content"><h2 class="text-xl font-bold mb-4">Formulir Izin / Sakit</h2><form id="leave-request-form"><div class="mb-4"><label for="leave-type" class="block text-gray-700 font-medium mb-2">Jenis Pengajuan</label><select id="leave-type" class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"><option value="Sakit">Sakit</option><option value="Izin">Izin</option></select></div><div class="mb-4"><label for="leave-reason" class="block text-gray-700 font-medium mb-2">Keterangan</label><textarea id="leave-reason" rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required placeholder="Contoh: Ada acara keluarga di luar kota."></textarea></div><div class="mb-4"><button type="button" id="attach-photo-btn" class="w-full border border-blue-500 text-blue-600 font-bold py-2 px-4 rounded-lg hover:bg-blue-50 transition"><i class="fa-solid fa-camera mr-2"></i> Lampirkan Foto Bukti</button><img id="photo-preview" src="" class="hidden mt-4 w-24 h-24 object-cover rounded-lg"/></div><div class="flex justify-between mt-6"><button type="submit" class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition mr-2">Kirim Pengajuan</button><button type="button" id="cancel-leave-request-btn" class="w-full bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-400 transition ml-2">Batal</button></div></form></div>
-    </div>
+    <div id="selfie-modal" class="modal-overlay hidden"><div class="modal-content"><h2 class="text-xl font-bold mb-4">Ambil Foto Bukti</h2><p class="text-gray-600 mb-4">Contoh: Surat dokter atau foto yang relevan.</p><video id="video-preview" autoplay></video><canvas id="selfie-canvas" class="hidden"></canvas><div class="flex justify-between mt-4"><button id="capture-btn" class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition mr-2">Ambil Foto</button><button id="cancel-selfie-btn" class="w-full bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-400 transition ml-2">Batal</button></div></div></div>
+    <div id="notification-modal" class="modal-overlay hidden"><div class="modal-content text-center"><div id="notification-icon" class="text-5xl mb-4"></div><h2 id="notification-title" class="text-xl font-bold mb-2"></h2><p id="notification-message" class="text-gray-600 mb-6"></p><button id="close-notification-btn" class="bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700 transition">Tutup</button></div></div>
+    <div id="checkin-selfie-modal" class="modal-overlay hidden"><div class="modal-content"><h2 class="text-xl font-bold mb-4">Verifikasi Check-in dengan Foto</h2><p class="text-gray-600 mb-4">Posisikan wajah Anda di depan kamera.</p><video id="checkin-video-preview" autoplay></video><canvas id="checkin-selfie-canvas" class="hidden"></canvas><div class="flex justify-between mt-4"><button id="capture-checkin-btn" class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition mr-2 disabled:bg-gray-400 disabled:cursor-not-allowed" disabled><i class="fa-solid fa-camera mr-2"></i> Ambil Foto & Check-in</button><button id="cancel-checkin-btn" class="w-full bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-400 transition ml-2">Batal</button></div></div></div>
+    <div id="leave-request-modal" class="modal-overlay hidden"><div class="modal-content"><h2 class="text-xl font-bold mb-4">Formulir Izin / Sakit</h2><form id="leave-request-form"><div class="mb-4"><label for="leave-type" class="block text-gray-700 font-medium mb-2">Jenis Pengajuan</label><select id="leave-type" class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"><option value="Sakit">Sakit</option><option value="Izin">Izin</option></select></div><div class="mb-4"><label for="leave-reason" class="block text-gray-700 font-medium mb-2">Keterangan</label><textarea id="leave-reason" rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required placeholder="Contoh: Ada acara keluarga di luar kota."></textarea></div><div class="mb-4"><button type="button" id="attach-photo-btn" class="w-full border border-blue-500 text-blue-600 font-bold py-2 px-4 rounded-lg hover:bg-blue-50 transition"><i class="fa-solid fa-camera mr-2"></i> Lampirkan Foto Bukti</button><img id="photo-preview" src="" class="hidden mt-4 w-24 h-24 object-cover rounded-lg"/></div><div class="flex justify-between mt-6"><button type="submit" class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition mr-2">Kirim Pengajuan</button><button type="button" id="cancel-leave-request-btn" class="w-full bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-400 transition ml-2">Batal</button></div></form></div></div>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -386,6 +266,7 @@
 
             // --- ELEMEN DOM ---
             const loginPage = document.getElementById('login-page');
+            const dashboardContent = document.getElementById('dashboard-content');
             const studentDashboard = document.getElementById('student-dashboard');
             const teacherDashboard = document.getElementById('teacher-dashboard');
             const registerStudentForm = document.getElementById('register-student-form');
@@ -396,14 +277,17 @@
             const getCurrentTimeString = () => new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
 
             function setLoginBackground(isActive) {
+                const loginPageDiv = document.getElementById('login-page');
                 if (isActive) {
                     document.body.classList.add('login-background');
                     document.body.classList.remove('bg-gray-100');
-                    document.getElementById('app-container').classList.remove('max-w-4xl', 'mx-auto');
+                    loginPageDiv.classList.remove('hidden');
+                    dashboardContent.classList.add('hidden');
                 } else {
                     document.body.classList.remove('login-background');
                     document.body.classList.add('bg-gray-100');
-                    document.getElementById('app-container').classList.add('max-w-4xl', 'mx-auto');
+                    loginPageDiv.classList.add('hidden');
+                    dashboardContent.classList.remove('hidden');
                 }
             }
             
@@ -418,7 +302,6 @@
                 if (user) {
                     currentUser = user;
                     sessionStorage.setItem('currentUser', JSON.stringify(user));
-                    loginPage.classList.add('hidden');
                     setLoginBackground(false);
                     if (user.role === 'siswa') showStudentDashboard();
                     else showTeacherDashboard();
@@ -431,7 +314,6 @@
             const logout = () => {
                 currentUser = null;
                 sessionStorage.removeItem('currentUser');
-                loginPage.classList.remove('hidden');
                 studentDashboard.classList.add('hidden');
                 teacherDashboard.classList.add('hidden');
                 document.getElementById('login-form').reset();
@@ -442,15 +324,17 @@
 
             // --- FUNGSI DASHBOARD & UI UPDATES ---
             function showStudentDashboard() {
+                studentDashboard.classList.remove('hidden');
+                teacherDashboard.classList.add('hidden');
                 document.getElementById('student-name').textContent = currentUser.name;
                 document.getElementById('student-profile-img-header').src = currentUser.profilePhoto || placeholderPhoto;
-                studentDashboard.classList.remove('hidden');
                 updateStudentUI();
             }
 
             function showTeacherDashboard() {
-                document.getElementById('teacher-name').textContent = currentUser.name;
                 teacherDashboard.classList.remove('hidden');
+                studentDashboard.classList.add('hidden');
+                document.getElementById('teacher-name').textContent = currentUser.name;
                 updateTeacherUI();
             }
 
@@ -839,7 +723,6 @@
             const loggedInUser = sessionStorage.getItem('currentUser');
             if (loggedInUser) {
                 currentUser = JSON.parse(loggedInUser);
-                loginPage.classList.add('hidden');
                 setLoginBackground(false);
                 if (currentUser.role === 'siswa') showStudentDashboard();
                 else showTeacherDashboard();
