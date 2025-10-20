@@ -467,7 +467,7 @@
                 });
             }
 
-            // MODIFIED: Menggunakan Supabase untuk menyimpan data absensi
+            // MODIFIED: Menggunakan Supabase untuk menyimpan data absensi dan melakukan optimistic update
             async function recordAttendance(type, photoUrl) {
                 const todayDate = getTodayDateString();
                 const currentTime = getCurrentTimeString();
@@ -475,39 +475,50 @@
                 if (type === 'check-in') {
                     if (!photoUrl) return showNotification('Gagal', 'Foto wajib untuk check-in.', 'error');
                     
-                    const { data, error } = await supabaseClient.from('attendance_records').insert({
+                    const newRecord = {
                         user_id: currentUserProfile.id,
                         student_name: currentUserProfile.full_name,
                         date: todayDate,
                         check_in_time: currentTime,
                         status: 'Hadir',
                         check_in_photo_url: photoUrl
-                    });
+                    };
+
+                    const { data, error } = await supabaseClient.from('attendance_records')
+                        .insert(newRecord)
+                        .select()
+                        .single();
 
                     if (error) {
                          showNotification('Gagal', 'Gagal menyimpan data check-in. ' + error.message, 'error');
                     } else {
                          showNotification('Berhasil', `Anda berhasil check-in pada pukul ${currentTime}.`, 'success');
+                         // --- PERBAIKAN: Optimistic UI Update ---
+                         if(data) attendanceRecords.push(data);
                     }
                 } else if (type === 'check-out') {
                     const todayRecord = attendanceRecords.find(r => r.user_id === currentUserProfile.id && r.date === todayDate);
                     if (todayRecord) {
                          const { data, error } = await supabaseClient.from('attendance_records')
                             .update({ check_out_time: currentTime })
-                            .eq('id', todayRecord.id);
+                            .eq('id', todayRecord.id)
+                            .select()
+                            .single();
                         
                          if (error) {
                              showNotification('Gagal', 'Gagal menyimpan data check-out. ' + error.message, 'error');
                          } else {
                              showNotification('Berhasil', `Anda berhasil check-out pada pukul ${currentTime}.`, 'success');
+                             // --- PERBAIKAN: Optimistic UI Update ---
+                             if(data) todayRecord.check_out_time = data.check_out_time;
                          }
                     }
                 }
-                await loadAllData();
+                // Hapus loadAllData() dan langsung panggil updateStudentUI()
                 updateStudentUI();
             }
 
-            // MODIFIED: Konfirmasi Check-in akan mengupload foto lalu mencatat absensi
+            // Konfirmasi Check-in (Tidak perlu diubah, alur sudah benar)
             confirmCheckinBtn.addEventListener('click', async () => {
                 showNotification('Proses', 'Mengunggah foto...', 'loading');
                 const photoUrl = await uploadBase64Image('attendance_photos', tempCheckinPhoto);
