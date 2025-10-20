@@ -251,7 +251,6 @@
             const dashboardContent = document.getElementById('dashboard-content');
             const studentDashboard = document.getElementById('student-dashboard');
             const teacherDashboard = document.getElementById('teacher-dashboard');
-            // ... (Elemen DOM lainnya tetap sama)
             const placeholderPhoto = 'https://placehold.co/200x200/EFEFEF/AAAAAA?text=Foto';
             const profileModal = document.getElementById('profile-modal');
             const checkinSelfieModal = document.getElementById('checkin-selfie-modal');
@@ -268,7 +267,15 @@
 
             // --- FUNGSI UTILITAS & SETUP ---
             const getTodayDateString = () => new Date().toISOString().split('T')[0];
-            const getCurrentTimeString = () => new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            
+            // --- PERBAIKAN: Fungsi waktu diubah untuk menghasilkan format HH:MM:SS ---
+            const getCurrentTimeString = () => {
+                const now = new Date();
+                const hours = String(now.getHours()).padStart(2, '0');
+                const minutes = String(now.getMinutes()).padStart(2, '0');
+                const seconds = String(now.getSeconds()).padStart(2, '0');
+                return `${hours}:${minutes}:${seconds}`;
+            };
 
             function setLoginBackground(isActive) {
                 if (isActive) {
@@ -290,7 +297,7 @@
                 const username = document.getElementById('username').value;
                 const password = document.getElementById('password').value;
                 const role = document.getElementById('role').value;
-                const email = `${username}@absensi.app`; // Menggunakan username sebagai bagian dari email dummy
+                const email = `${username}@absensi.app`;
                 
                 showNotification('Login', 'Mencoba untuk masuk...', 'loading');
 
@@ -307,7 +314,6 @@
                 }
 
                 if (user) {
-                    // Ambil profil dari tabel 'users'
                     const { data: profile, error: profileError } = await supabaseClient
                         .from('users')
                         .select('*')
@@ -319,12 +325,11 @@
                         return;
                     }
                     
-                    // Cek apakah peran sesuai
                     if (profile.role !== role) {
                         document.getElementById('login-error').textContent = `Anda tidak terdaftar sebagai ${role}.`;
                         document.getElementById('login-error').classList.remove('hidden');
                         showNotification('Gagal', `Peran yang dipilih tidak sesuai.`, 'error');
-                        await supabaseClient.auth.signOut(); // Langsung logout jika peran salah
+                        await supabaseClient.auth.signOut();
                         return;
                     }
 
@@ -364,7 +369,7 @@
                 }
                 
                 users = usersData;
-                attendanceRecords = attendanceData.map(r => ({ ...r, date: r.date })); // Pastikan format tanggal benar
+                attendanceRecords = attendanceData.map(r => ({ ...r, date: r.date }));
                 leaveRequests = leaveData.map(r => ({ ...r, date: r.date }));
 
                 document.getElementById('notification-modal').classList.add('hidden');
@@ -434,7 +439,7 @@
             }
             
             async function updateTeacherUI() {
-                await loadAllData(); // Selalu ambil data terbaru saat guru berinteraksi
+                await loadAllData();
                 renderTeacherRekap();
                 renderLeaveRequests();
                 renderStudentList();
@@ -467,7 +472,6 @@
                 });
             }
 
-            // MODIFIED: Menggunakan Supabase untuk menyimpan data absensi dan melakukan optimistic update
             async function recordAttendance(type, photoUrl) {
                 const todayDate = getTodayDateString();
                 const currentTime = getCurrentTimeString();
@@ -493,7 +497,6 @@
                          showNotification('Gagal', 'Gagal menyimpan data check-in. ' + error.message, 'error');
                     } else {
                          showNotification('Berhasil', `Anda berhasil check-in pada pukul ${currentTime}.`, 'success');
-                         // --- PERBAIKAN: Optimistic UI Update ---
                          if(data) attendanceRecords.push(data);
                     }
                 } else if (type === 'check-out') {
@@ -509,16 +512,13 @@
                              showNotification('Gagal', 'Gagal menyimpan data check-out. ' + error.message, 'error');
                          } else {
                              showNotification('Berhasil', `Anda berhasil check-out pada pukul ${currentTime}.`, 'success');
-                             // --- PERBAIKAN: Optimistic UI Update ---
                              if(data) todayRecord.check_out_time = data.check_out_time;
                          }
                     }
                 }
-                // Hapus loadAllData() dan langsung panggil updateStudentUI()
                 updateStudentUI();
             }
 
-            // Konfirmasi Check-in (Tidak perlu diubah, alur sudah benar)
             confirmCheckinBtn.addEventListener('click', async () => {
                 showNotification('Proses', 'Mengunggah foto...', 'loading');
                 const photoUrl = await uploadBase64Image('attendance_photos', tempCheckinPhoto);
@@ -590,26 +590,23 @@
                 const username = document.getElementById('new-student-username').value;
                 const password = document.getElementById('new-student-password').value;
                 const photoFile = document.getElementById('new-student-photo').files[0];
-                const email = `${username}@absensi.app`; // Email dummy untuk auth
+                const email = `${username}@absensi.app`;
 
                 if (users.some(u => u.username === username)) return showNotification('Gagal', `Username "${username}" sudah digunakan.`, 'error');
                 if (users.some(u => u.nisn === nisn)) return showNotification('Gagal', `NISN "${nisn}" sudah terdaftar.`, 'error');
                 
                 showNotification('Memproses', 'Mendaftarkan siswa dan mengunggah foto...', 'loading');
                 
-                // 1. Unggah foto profil
                 const photoDataUrl = await resizeImage(photoFile, 200, 200);
                 const photoUrl = await uploadBase64Image('profile_photos', photoDataUrl);
                 if (!photoUrl) return showNotification('Gagal', 'Gagal mengunggah foto profil.', 'error');
                 
-                // 2. Daftarkan pengguna di Supabase Auth
                 const { data: authData, error: authError } = await supabaseClient.auth.signUp({
                     email: email,
                     password: password,
                 });
                 if (authError) return showNotification('Gagal', 'Gagal mendaftarkan pengguna: ' + authError.message, 'error');
 
-                // 3. Simpan detail profil ke tabel 'users'
                 const { data: profileData, error: profileError } = await supabaseClient.from('users').insert({
                     id: authData.user.id,
                     username: username,
@@ -654,12 +651,7 @@
                     return null;
                 }
             }
-
-
-            // --- (SISA FUNGSI SEPERTI PERINGKAT, LAPORAN, IZIN, DLL) ---
-            // Kode di bawah ini sebagian besar tetap sama, hanya perlu mengganti akses data ke variabel state
-            // dan memanggil fungsi Supabase untuk update data.
-
+            
             function calculateRankings(month = 'all') {
                 const allStudents = users.filter(u => u.role === 'siswa');
                 let filteredRecords = attendanceRecords;
@@ -870,13 +862,7 @@
 
             // --- FUNGSI HELPERS (TETAP SAMA) ---
             const startCamera = (videoElement, modalElement, successCallback) => {
-                const constraints = {
-                    video: {
-                        facingMode: 'user' // Meminta kamera depan
-                    },
-                    audio: false
-                };
-
+                const constraints = { video: { facingMode: 'user' }, audio: false };
                 modalElement.classList.remove('hidden');
                 navigator.mediaDevices.getUserMedia(constraints)
                     .then(stream => { 
@@ -885,7 +871,6 @@
                     })
                     .catch(err => {
                         console.error("Error accessing camera: ", err);
-                        // Memberikan pesan error yang lebih spesifik
                         let errorMessage = 'Tidak dapat mengakses kamera. Pastikan Anda memberikan izin.';
                         if (err.name === 'NotAllowedError') {
                             errorMessage = 'Anda telah memblokir akses kamera. Mohon izinkan melalui pengaturan browser.';
@@ -982,7 +967,6 @@
             }
 
             // --- SISA KODE MODAL & EVENT LISTENER YANG SAMA ---
-            // (Tidak perlu diubah)
             function setupModalListeners() {
                 const selfieModal = document.getElementById('selfie-modal');
                 const videoPreview = document.getElementById('video-preview');
@@ -1053,4 +1037,3 @@
     </script>
 </body>
 </html>
-
