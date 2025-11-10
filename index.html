@@ -3,12 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aplikasi Absensi Online</title>
+    <title>Aplikasi Absensi Online (Supabase)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <!-- Pustaka untuk membuat file Excel -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Pustaka Klien Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -60,15 +63,44 @@
             background-position: center;
             background-attachment: fixed;
         }
-        /* Style untuk tab aktif */
         .active-tab {
             border-bottom-width: 2px;
             border-color: #3b82f6; /* blue-500 */
             color: #2563eb; /* blue-600 */
         }
+        /* Loading spinner */
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, .1);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: #3b82f6;
+            animation: spin 1s ease infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
+
+    <!-- Loading Spinner Global -->
+    <div id="global-loading" class="modal-overlay hidden" style="z-index: 999;">
+        <div class="spinner"></div>
+    </div>
 
     <!-- Container Utama Aplikasi -->
     <div id="app-container" class="w-full min-h-screen">
@@ -233,57 +265,32 @@
         document.addEventListener('DOMContentLoaded', () => {
             const placeholderPhoto = 'https://placehold.co/200x200/EFEFEF/AAAAAA?text=Foto';
             
-            // --- DATA DUMMY & INISIALISASI ---
-            let users = JSON.parse(localStorage.getItem('users')) || [
-                { id: 's1', username: 'budi', password: '123', role: 'siswa', name: 'Budi Santoso', nisn: '1234567890', profilePhoto: placeholderPhoto },
-                { id: 's2', username: 'ani', password: '123', role: 'siswa', name: 'Ani Lestari', nisn: '0987654321', profilePhoto: placeholderPhoto },
-                { id: 's3', username: 'eko', password: '123', role: 'siswa', name: 'Eko Nugroho', nisn: '1122334455', profilePhoto: placeholderPhoto },
-                { id: 's4', username: 'adam', password: '123', role: 'siswa', name: 'Aldebaran Adam Syahputra', nisn: '1234500001', profilePhoto: placeholderPhoto },
-                { id: 's5', username: 'aulia', password: '123', role: 'siswa', name: 'Aulia Danish', nisn: '1234500002', profilePhoto: placeholderPhoto },
-                { id: 's6', username: 'anzilah', password: '123', role: 'siswa', name: 'Anzilah Nur', nisn: '1234500003', profilePhoto: placeholderPhoto },
-                { id: 's7', username: 'chairil', password: '123', role: 'siswa', name: 'Chairil Ahmad Fathir', nisn: '1234500004', profilePhoto: placeholderPhoto },
-                { id: 's8', username: 'daiva', password: '123', role: 'siswa', name: 'Daiva Bhagja Wangsapriyatman', nisn: '1234500005', profilePhoto: placeholderPhoto },
-                { id: 's9', username: 'luna', password: '123', role: 'siswa', name: 'Dellaluna Nur Agustina', nisn: '1234500006', profilePhoto: placeholderPhoto },
-                { id: 's10', username: 'denian', password: '123', role: 'siswa', name: 'Denian Prasetya', nisn: '1234500007', profilePhoto: placeholderPhoto },
-                { id: 's11', username: 'fadhillah', password: '123', role: 'siswa', name: 'Fadhillah Nursyifa', nisn: '1234500008', profilePhoto: placeholderPhoto },
-                { id: 's12', username: 'ghaisan', password: '123', role: 'siswa', name: 'Ghaisan Rafani', nisn: '1234500009', profilePhoto: placeholderPhoto },
-                { id: 's13', username: 'hasna', password: '123', role: 'siswa', name: 'Hasna Fauziah Aqila', nisn: '1234500010', profilePhoto: placeholderPhoto },
-                { id: 's14', username: 'heni', password: '123', role: 'siswa', name: 'Heni Ramadhani', nisn: '1234500011', profilePhoto: placeholderPhoto },
-                { id: 's15', username: 'iyan', password: '123', role: 'siswa', name: 'Iyan Apriansa', nisn: '1234500012', profilePhoto: placeholderPhoto },
-                { id: 's16', username: 'keihsa', password: '123', role: 'siswa', name: 'Keihsa Anindya Danastri Hasan', nisn: '1234500013', profilePhoto: placeholderPhoto },
-        { id: 's17', username: 'kintan', password: '123', role: 'siswa', name: 'Kintan Putri Haryono', nisn: '1234500014', profilePhoto: placeholderPhoto },
-                { id: 's18', username: 'fajri', password: '123', role: 'siswa', name: 'Muhamad Fajri Bakkah', nisn: '1234500015', profilePhoto: placeholderPhoto },
-                { id: 's19', username: 'farhan', password: '123', role: 'siswa', name: 'Muhamad Farhan', nisn: '1234500016', profilePhoto: placeholderPhoto },
-                { id: 's20', username: 'nabil', password: '123', role: 'siswa', name: 'Muhammad Nabil Fadhlurrohman', nisn: '1234500017', profilePhoto: placeholderPhoto },
-                { id: 's21', username: 'ridhan', password: '123', role: 'siswa', name: 'M.Ridhan Fajari', nisn: '1234500018', profilePhoto: placeholderPhoto },
-                { id: 's22', username: 'rizqy', password: '123', role: 'siswa', name: 'Muhammad Rizqy Irza Saputra', nisn: '1234500019', profilePhoto: placeholderPhoto },
-                { id: 's23', username: 'nadia', password: '123', role: 'siswa', name: 'Nadia Aprianca Putri', nisn: '1234500020', profilePhoto: placeholderPhoto },
-                { id: 's24', username: 'naisya', password: '123', role: 'siswa', name: 'Naisya Aufia Indri', nisn: '1234500021', profilePhoto: placeholderPhoto },
-                { id: 's25', username: 'nasya', password: '123', role: 'siswa', name: 'Nasya Tri Febriyani', nisn: '1234500022', profilePhoto: placeholderPhoto },
-                { id: 's26', username: 'naya', password: '123', role: 'siswa', name: 'Naya Nardiana', nisn: '1234500023', profilePhoto: placeholderPhoto },
-                { id: 's27', username: 'maya', password: '123', role: 'siswa', name: 'Nur Maya Aini', nisn: '1234500024', profilePhoto: placeholderPhoto },
-                { id: 's28', username: 'puspita', password: '123', role: 'siswa', name: 'Puspita Widia Kusumaningsih', nisn: '1234500025', profilePhoto: placeholderPhoto },
-                { id: 's29', username: 'puteri', password: '123', role: 'siswa', name: 'Puteri Rosmayanti', nisn: '1234500026', profilePhoto: placeholderPhoto },
-                { id: 's30', username: 'rafa', password: '123', role: 'siswa', name: 'Rafa Yanwardi Azhar', nisn: '1234500027', profilePhoto: placeholderPhoto },
-                { id: 's31', username: 'raka', password: '123', role: 'siswa', name: 'Raka Alif Al-aziz', nisn: '1234500028', profilePhoto: placeholderPhoto },
-                { id: 's32', username: 'resti', password: '123', role: 'siswa', name: 'Resti Julianti', nisn: '1234500029', profilePhoto: placeholderPhoto },
-                { id: 's33', username: 'malia', password: '123', role: 'siswa', name: 'Siti Nurmalia Ramadhan', nisn: '1234500030', profilePhoto: placeholderPhoto },
-                { id: 's34', username: 'sulthan', password: '123', role: 'siswa', name: 'Sulthan Fardhan Anggestu', nisn: '1234500031', profilePhoto: placeholderPhoto },
-                { id: 's35', username: 'ayya', password: '123', role: 'siswa', name: 'Sumayyah Dema Nazihah', nisn: '1234500032', profilePhoto: placeholderPhoto },
-                { id: 's36', username: 'syafira', password: '123', role: 'siswa', name: 'Syafira Ramadhani', nisn: '1234500033', profilePhoto: placeholderPhoto },
-                { id: 's37', username: 'syakilla', password: '123', role: 'siswa', name: 'Syakilla Insan Sabria', nisn: '1234500034', profilePhoto: placeholderPhoto },
-                { id: 's38', username: 'syifa', password: '123', role: 'siswa', name: 'Syifa Amelia Dalimunthe', nisn: '1234500035', profilePhoto: placeholderPhoto },
-                { id: 's39', username: 'zahra', password: '123', role: 'siswa', name: 'Zahra Tunnisa', nisn: '1234500036', profilePhoto: placeholderPhoto },
-                { id: 'g1', username: 'guru', password: '456', role: 'guru', name: 'Bapak Dadang' },
-            ];
+            // --- KONFIGURASI SUPABASE ---
+            // !! PENTING: Ganti dengan URL dan Kunci Anon Supabase Anda
+            // !! Anda bisa dapatkan ini dari file panduan_supabase.md
+            const supabaseUrl = 'https://bsvhcrpwsnysigetdzii.supabase.co';
+            const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzdmhjcnB3c255c2lnZXRkemlpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI3MDMwNzcsImV4cCI6MjA3ODI3OTA3N30.ANQl7LgkMBWSpTlk7Ij4fT5367g3DQvknMTZ1k3VlPI';
             
-            let attendanceRecords = JSON.parse(localStorage.getItem('attendanceRecords')) || [];
-            let leaveRequests = JSON.parse(localStorage.getItem('leaveRequests')) || [];
+            // Periksa apakah kredensial telah diisi
+            if (supabaseUrl === 'GANTI_DENGAN_URL_SUPABASE_ANDA' || supabaseKey === 'GANTI_DENGAN_KUNCI_ANON_SUPABASE_ANDA') {
+                document.body.innerHTML = `<div class="p-8 text-center text-red-600 bg-red-100">
+                    <h1 class="font-bold text-2xl">Konfigurasi Belum Selesai</h1>
+                    <p class="mt-2">Silakan buka file <strong>aplikasi_absensi.html</strong> dan ganti <strong>supabaseUrl</strong> dan <strong>supabaseKey</strong> dengan kredensial Supabase Anda. Ikuti petunjuk di file <strong>panduan_supabase.md</strong>.</p>
+                    </div>`;
+                return;
+            }
+
+            // *** PERBAIKAN: Mengganti nama variabel 'supabase' menjadi 'sbClient' ***
+            const sbClient = supabase.createClient(supabaseUrl, supabaseKey);
+
+            // --- DATA STATE (CACHE) ---
+            // Tidak lagi mengambil dari localStorage. Data akan diambil dari Supabase saat login.
             let currentUser = null;
             let selfieDataUrl = null;
             let currentStream = null;
 
             // --- ELEMEN DOM ---
+            const globalLoading = document.getElementById('global-loading');
             const loginPage = document.getElementById('login-page');
             const dashboardContent = document.getElementById('dashboard-content');
             const studentDashboard = document.getElementById('student-dashboard');
@@ -299,12 +306,40 @@
             const getTodayDateString = () => new Date().toISOString().split('T')[0];
             const getCurrentTimeString = () => new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
 
-            const saveData = () => {
-                localStorage.setItem('users', JSON.stringify(users));
-                localStorage.setItem('attendanceRecords', JSON.stringify(attendanceRecords));
-                localStorage.setItem('leaveRequests', JSON.stringify(leaveRequests));
+            const showLoading = (show) => {
+                globalLoading.classList.toggle('hidden', !show);
             };
 
+            // Fungsi untuk mengubah DataURL (Base64) menjadi Blob untuk upload
+            function dataURLtoBlob(dataurl) {
+                var arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1],
+                    bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
+                while(n--){
+                    u8arr[n] = bstr.charCodeAt(n);
+                }
+                return new Blob([u8arr], {type:mime});
+            }
+
+            // Fungsi untuk upload file/blob ke Supabase Storage
+            async function uploadPhoto(blob, folder, fileName) {
+                const filePath = `${folder}/${fileName}`;
+                const { data, error } = await sbClient.storage
+                    .from('photos') // Nama bucket Anda
+                    .upload(filePath, blob, {
+                        cacheControl: '3600',
+                        upsert: true // Timpa jika sudah ada
+                    });
+
+                if (error) {
+                    console.error('Error uploading photo:', error);
+                    return null;
+                }
+
+                // Dapatkan URL publik
+                const { data: urlData } = sbClient.storage.from('photos').getPublicUrl(filePath);
+                return urlData.publicUrl;
+            }
+            
             function setLoginBackground(isActive) {
                 const loginPageDiv = document.getElementById('login-page');
                 if (isActive) {
@@ -359,25 +394,17 @@
                 }
             }
             
-            function findUserById(id) {
-                return users.find(u => u.id === id);
-            }
-
-            function getStudentRankings(monthYear) {
-                // monthYear format: "YYYY-MM"
-                const students = users.filter(u => u.role === 'siswa');
+            function getStudentRankings(allUsers, allAttendanceRecords, monthYear) {
+                const students = allUsers.filter(u => u.role === 'siswa');
                 const rankings = students.map(student => {
-                    const presentCount = attendanceRecords.filter(record =>
+                    const presentCount = allAttendanceRecords.filter(record =>
                         record.userId === student.id &&
                         record.date.startsWith(monthYear) &&
                         (record.status === 'Hadir' || record.status === 'Telat')
                     ).length;
 
-                    // Hitung total hari sekolah di bulan itu (simplifikasi: total hari di bulan)
                     const [year, month] = monthYear.split('-').map(Number);
                     const totalDaysInMonth = new Date(year, month, 0).getDate(); 
-                    // TODO: Idealnya, ini harus menjadi jumlah hari sekolah, bukan hari kalender.
-                    // Untuk demo, kita asumsikan 20 hari sekolah jika datanya tidak lengkap.
                     const schoolDays = totalDaysInMonth > 20 ? 20 : totalDaysInMonth; // Asumsi sederhana
 
                     const percentage = schoolDays > 0 ? (presentCount / schoolDays) * 100 : 0;
@@ -389,30 +416,42 @@
                         percentage: Math.round(percentage)
                     };
                 });
-
-                // Urutkan berdasarkan jumlah hadir terbanyak
                 rankings.sort((a, b) => b.presentCount - a.presentCount);
                 return rankings;
             }
 
             // --- FUNGSI UTAMA (LOGIN/LOGOUT) ---
-            document.getElementById('login-form').addEventListener('submit', (e) => {
+            document.getElementById('login-form').addEventListener('submit', async (e) => {
                 e.preventDefault();
+                showLoading(true);
                 const username = document.getElementById('username').value;
                 const password = document.getElementById('password').value;
                 const role = document.getElementById('role').value;
-                const user = users.find(u => u.username === username && u.password === password && u.role === role);
+                
+                // Query ke tabel 'users' di Supabase
+                const { data, error } = await sbClient
+                    .from('users')
+                    .select('*')
+                    .eq('username', username)
+                    .eq('password', password) // Catatan: Menyimpan password sebagai plain text tidak aman.
+                    .eq('role', role)
+                    .single(); // Ambil satu data
 
-                if (user) {
-                    currentUser = user;
-                    sessionStorage.setItem('currentUser', JSON.stringify(user));
-                    setLoginBackground(false);
-                    if (user.role === 'siswa') showStudentDashboard();
-                    else showTeacherDashboard();
-                } else {
+                if (error || !data) {
                     document.getElementById('login-error').textContent = 'Username, password, atau peran salah!';
                     document.getElementById('login-error').classList.remove('hidden');
+                    showLoading(false);
+                } else {
+                    currentUser = data; // Simpan data user yang login
+                    sessionStorage.setItem('currentUser', JSON.stringify(currentUser)); // Gunakan data dari DB
+                    setLoginBackground(false);
+                    if (currentUser.role === 'siswa') { // Gunakan currentUser.role
+                        await showStudentDashboard();
+                    } else {
+                        await showTeacherDashboard();
+                    }
                 }
+                showLoading(false);
             });
 
             const logout = () => {
@@ -429,21 +468,39 @@
             // --- FUNGSI DASHBOARD & UI UPDATES ---
 
             // === SISWA ===
-            function showStudentDashboard() {
+            async function showStudentDashboard() {
                 studentDashboard.classList.remove('hidden');
                 teacherDashboard.classList.add('hidden');
                 document.getElementById('student-name').textContent = currentUser.name;
                 document.getElementById('student-profile-img-header').src = currentUser.profilePhoto || placeholderPhoto;
                 
-                updateAttendanceStatus();
-                renderStudentHistory();
-                renderStudentRank();
+                // Render semua komponen secara asinkron
+                await Promise.all([
+                    updateAttendanceStatus(),
+                    renderStudentHistory(),
+                    renderStudentRank()
+                ]);
             }
 
-            function updateAttendanceStatus() {
+            async function updateAttendanceStatus() {
                 const today = getTodayDateString();
-                const todayRecord = attendanceRecords.find(r => r.userId === currentUser.id && r.date === today);
-                const todayLeave = leaveRequests.find(l => l.userId === currentUser.id && l.date === today && l.status === 'Disetujui');
+                
+                // Cek data absensi
+                const { data: todayRecord, error: recordError } = await sbClient
+                    .from('attendance_records')
+                    .select('*')
+                    .eq('userId', currentUser.id)
+                    .eq('date', today)
+                    .single();
+
+                // Cek data izin
+                const { data: todayLeave, error: leaveError } = await sbClient
+                    .from('leave_requests')
+                    .select('*')
+                    .eq('userId', currentUser.id)
+                    .eq('date', today)
+                    .eq('status', 'Disetujui')
+                    .single();
 
                 const checkInBtn = document.getElementById('check-in-btn');
                 const checkOutBtn = document.getElementById('check-out-btn');
@@ -469,18 +526,27 @@
                 }
             }
 
-            function renderStudentHistory() {
+            async function renderStudentHistory() {
                 const historyBody = document.getElementById('student-history');
-                historyBody.innerHTML = '';
-                const myRecords = attendanceRecords
-                    .filter(r => r.userId === currentUser.id)
-                    .sort((a, b) => b.date.localeCompare(a.date)); // Urutkan terbaru dulu
+                historyBody.innerHTML = '<tr><td colspan="4" class="p-3 text-center text-gray-500">Memuat riwayat...</td></tr>';
+                
+                const { data: myRecords, error } = await sbClient
+                    .from('attendance_records')
+                    .select('*')
+                    .eq('userId', currentUser.id)
+                    .order('date', { ascending: false }); // Urutkan terbaru dulu
+
+                if (error) {
+                    historyBody.innerHTML = '<tr><td colspan="4" class="p-3 text-center text-red-500">Gagal memuat riwayat.</td></tr>';
+                    return;
+                }
 
                 if (myRecords.length === 0) {
                     historyBody.innerHTML = '<tr><td colspan="4" class="p-3 text-center text-gray-500">Belum ada riwayat.</td></tr>';
                     return;
                 }
-
+                
+                historyBody.innerHTML = '';
                 myRecords.forEach(r => {
                     historyBody.innerHTML += `
                         <tr class="border-b">
@@ -490,6 +556,7 @@
                             <td class="p-3"><span class="px-2 py-1 rounded-full text-xs font-medium ${
                                 r.status === 'Hadir' ? 'bg-green-100 text-green-800' :
                                 r.status === 'Telat' ? 'bg-yellow-100 text-yellow-800' :
+                                r.status === 'Izin' || r.status === 'Sakit' ? 'bg-blue-100 text-blue-800' :
                                 'bg-red-100 text-red-800'
                             }">${r.status}</span></td>
                         </tr>
@@ -497,10 +564,27 @@
                 });
             }
 
-            function renderStudentRank() {
+            async function renderStudentRank() {
                 const container = document.getElementById('student-rank-diagram-container');
                 const currentMonth = getTodayDateString().substring(0, 7); // "YYYY-MM"
-                const rankings = getStudentRankings(currentMonth);
+
+                // Ambil semua data yang diperlukan untuk ranking
+                const { data: allRecords, error: recordsError } = await sbClient
+                    .from('attendance_records')
+                    .select('userId, date, status')
+                    .like('date', `${currentMonth}%`);
+
+                const { data: allUsers, error: usersError } = await sbClient
+                    .from('users')
+                    .select('id, name, role')
+                    .eq('role', 'siswa');
+
+                if (recordsError || usersError) {
+                    container.innerHTML = `<p class="text-red-500">Gagal memuat peringkat.</p>`;
+                    return;
+                }
+
+                const rankings = getStudentRankings(allUsers, allRecords, currentMonth);
                 const myRank = rankings.findIndex(r => r.id === currentUser.id);
 
                 if (myRank !== -1) {
@@ -514,18 +598,16 @@
             }
             
             // === GURU ===
-            function showTeacherDashboard() {
+            async function showTeacherDashboard() {
                 studentDashboard.classList.add('hidden');
                 teacherDashboard.classList.remove('hidden');
                 document.getElementById('teacher-name').textContent = currentUser.name;
                 
                 setupTabs();
                 populateMonthFilter();
-                renderTeacherRekap();
-                renderLeaveRequests();
-                renderRanking();
-                renderRegisteredStudents();
-                setupReportDownload();
+                
+                // Render tab default (rekap)
+                await renderTeacherRekap();
             }
 
             function setupTabs() {
@@ -533,49 +615,69 @@
                 const tabContents = document.querySelectorAll('#teacher-tab-content .tab-content');
 
                 tabs.forEach(tab => {
-                    tab.addEventListener('click', (e) => {
+                    tab.addEventListener('click', async (e) => {
                         e.preventDefault();
+                        showLoading(true);
                         
-                        // Hapus kelas aktif dari semua tab
                         tabs.forEach(t => t.classList.remove('active-tab', 'border-blue-500', 'text-blue-600'));
                         tabs.forEach(t => t.classList.add('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300'));
 
-                        // Tambah kelas aktif ke tab yang diklik
                         tab.classList.add('active-tab', 'border-blue-500', 'text-blue-600');
                         tab.classList.remove('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
                         
-                        // Sembunyikan semua konten tab
                         tabContents.forEach(content => content.classList.add('hidden'));
 
-                        // Tampilkan konten tab yang sesuai
                         const targetId = tab.getAttribute('href').substring(1);
                         document.getElementById(targetId).classList.remove('hidden');
 
-                        // Refresh konten jika perlu
-                        if (targetId === 'rekap') renderTeacherRekap();
-                        if (targetId === 'izin') renderLeaveRequests();
-                        if (targetId === 'peringkat') renderRanking();
-                        if (targetId === 'daftar') renderRegisteredStudents();
+                        // Refresh konten secara asinkron
+                        try {
+                            if (targetId === 'rekap') await renderTeacherRekap();
+                            if (targetId === 'izin') await renderLeaveRequests();
+                            if (targetId === 'peringkat') await renderRanking();
+                            if (targetId === 'daftar') await renderRegisteredStudents();
+                        } catch (err) {
+                            console.error("Error rendering tab:", err);
+                            showNotification("Error", "Gagal memuat data tab.", false);
+                        }
+                        showLoading(false);
                     });
                 });
-                // Atur tab default
-                document.querySelector('#teacher-tabs a[href="#rekap"]').click();
             }
 
-            function renderTeacherRekap() {
+            async function renderTeacherRekap() {
                 const rekapBody = document.getElementById('teacher-rekap');
-                rekapBody.innerHTML = '';
+                rekapBody.innerHTML = '<tr><td colspan="5" class="p-3 text-center text-gray-500">Memuat data...</td></tr>';
                 const today = getTodayDateString();
-                const allStudents = users.filter(u => u.role === 'siswa');
+
+                const { data: allStudents, error: studentsError } = await sbClient
+                    .from('users')
+                    .select('*')
+                    .eq('role', 'siswa');
+
+                if (studentsError) { /* handle error */ return; }
 
                 if (allStudents.length === 0) {
                      rekapBody.innerHTML = '<tr><td colspan="5" class="p-3 text-center text-gray-500">Belum ada siswa terdaftar.</td></tr>';
                     return;
                 }
 
+                // Ambil semua data absensi dan izin untuk hari ini
+                const { data: allRecords, error: recordsError } = await sbClient
+                    .from('attendance_records')
+                    .select('*')
+                    .eq('date', today);
+                
+                const { data: allLeaves, error: leavesError } = await sbClient
+                    .from('leave_requests')
+                    .select('*')
+                    .eq('date', today)
+                    .eq('status', 'Disetujui');
+                
+                rekapBody.innerHTML = '';
                 allStudents.forEach(student => {
-                    const todayRecord = attendanceRecords.find(r => r.userId === student.id && r.date === today);
-                    const todayLeave = leaveRequests.find(l => l.userId === student.id && l.date === today && l.status === 'Disetujui');
+                    const todayRecord = allRecords.find(r => r.userId === student.id);
+                    const todayLeave = allLeaves.find(l => l.userId === student.id);
                     
                     let status, checkIn, checkOut, photo, statusClass;
                     
@@ -584,7 +686,9 @@
                         checkIn = todayRecord.checkIn;
                         checkOut = todayRecord.checkOut || '-';
                         photo = todayRecord.checkInPhoto;
-                        statusClass = status === 'Hadir' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800';
+                        statusClass = status === 'Hadir' ? 'bg-green-100 text-green-800' : 
+                                      status === 'Telat' ? 'bg-yellow-100 text-yellow-800' :
+                                      'bg-blue-100 text-blue-800'; // Izin/Sakit dari approval
                     } else if (todayLeave) {
                         status = todayLeave.type;
                         checkIn = '-';
@@ -612,28 +716,39 @@
                     `;
                 });
             }
-            // Fungsi untuk melihat gambar di modal notifikasi (hack sederhana)
+            
             window.viewImage = (src) => {
                 showNotification('Foto Bukti', '', true);
                 document.getElementById('notification-message').innerHTML = `<img src="${src}" class="w-full rounded-lg">`;
             }
 
-            function renderLeaveRequests() {
+            async function renderLeaveRequests() {
                 const requestsBody = document.getElementById('leave-requests');
-                requestsBody.innerHTML = '';
-                const pendingRequests = leaveRequests.sort((a, b) => a.date.localeCompare(b.date));
+                requestsBody.innerHTML = '<tr><td colspan="6" class="p-3 text-center text-gray-500">Memuat pengajuan...</td></tr>';
+                
+                // Gunakan join untuk mengambil nama siswa
+                const { data: pendingRequests, error } = await sbClient
+                    .from('leave_requests')
+                    .select(`
+                        id, date, reason, type, status, proofPhoto,
+                        users ( name ) 
+                    `)
+                    .order('date', { ascending: true });
+
+                if (error) { /* handle error */ return; }
 
                 if (pendingRequests.length === 0) {
                     requestsBody.innerHTML = '<tr><td colspan="6" class="p-3 text-center text-gray-500">Tidak ada pengajuan izin.</td></tr>';
                     return;
                 }
-
+                
+                requestsBody.innerHTML = '';
                 pendingRequests.forEach(req => {
-                    const student = findUserById(req.userId);
+                    const studentName = req.users ? req.users.name : 'Siswa Dihapus';
                     const isPending = req.status === 'Pending';
                     requestsBody.innerHTML += `
                         <tr class="border-b">
-                            <td class="p-3">${student.name}</td>
+                            <td class="p-3">${studentName}</td>
                             <td class="p-3">${req.date}</td>
                             <td class="p-3">${req.reason} (${req.type})</td>
                             <td class="p-3">${req.status}</td>
@@ -651,37 +766,56 @@
                 });
             }
 
-            window.approveLeave = (id) => {
-                const req = leaveRequests.find(r => r.id === id);
-                if (req) {
-                    req.status = 'Disetujui';
-                    
-                    // Cek apakah sudah ada rekor absensi di hari itu, jika belum, tambahkan
-                    const todayRecord = attendanceRecords.find(r => r.userId === req.userId && r.date === req.date);
-                    if (!todayRecord) {
-                         attendanceRecords.push({
-                            id: 'att-' + Date.now(),
-                            userId: req.userId,
-                            date: req.date,
-                            checkIn: null,
-                            checkOut: null,
-                            status: req.type, // 'Sakit' atau 'Izin'
-                            checkInPhoto: req.proofPhoto
-                        });
-                    }
+            window.approveLeave = async (id) => {
+                showLoading(true);
+                // 1. Ambil data request untuk dapat userId dan tanggal
+                const { data: req, error: reqError } = await sbClient
+                    .from('leave_requests')
+                    .select('*')
+                    .eq('id', id)
+                    .single();
 
-                    saveData();
-                    renderLeaveRequests();
-                    renderTeacherRekap(); // Update rekap juga
+                if (reqError || !req) {
+                    showNotification('Error', 'Gagal menemukan data izin.', false);
+                    showLoading(false);
+                    return;
                 }
+
+                // 2. Update status izin
+                const { error: updateError } = await sbClient
+                    .from('leave_requests')
+                    .update({ status: 'Disetujui' })
+                    .eq('id', id);
+
+                if (updateError) { /* handle error */ }
+
+                // 3. Masukkan data ke rekor absensi
+                const { error: insertError } = await sbClient
+                    .from('attendance_records')
+                    .insert({
+                        userId: req.userId,
+                        date: req.date,
+                        checkIn: null,
+                        checkOut: null,
+                        status: req.type, // 'Sakit' atau 'Izin'
+                        checkInPhoto: req.proofPhoto
+                    });
+                
+                if (insertError) { /* handle error */ }
+
+                await renderLeaveRequests();
+                showLoading(false);
             };
-            window.rejectLeave = (id) => {
-                const req = leaveRequests.find(r => r.id === id);
-                if (req) {
-                    req.status = 'Ditolak';
-                    saveData();
-                    renderLeaveRequests();
-                }
+
+            window.rejectLeave = async (id) => {
+                showLoading(true);
+                const { error } = await sbClient
+                    .from('leave_requests')
+                    .update({ status: 'Ditolak' })
+                    .eq('id', id);
+                
+                await renderLeaveRequests();
+                showLoading(false);
             };
 
             function populateMonthFilter() {
@@ -701,14 +835,31 @@
                 monthFilter.addEventListener('change', renderRanking);
             }
 
-            function renderRanking() {
+            async function renderRanking() {
                 const rankingBody = document.getElementById('ranking-list');
                 const monthFilter = document.getElementById('month-filter');
                 const selectedMonth = monthFilter.value;
 
-                if (!selectedMonth) return; // Jika filter belum siap
+                if (!selectedMonth) return;
+                rankingBody.innerHTML = '<tr><td colspan="4" class="p-3 text-center text-gray-500">Memuat peringkat...</td></tr>';
 
-                const rankings = getStudentRankings(selectedMonth);
+                // Ambil semua data yang diperlukan
+                const { data: allRecords, error: recordsError } = await sbClient
+                    .from('attendance_records')
+                    .select('userId, date, status')
+                    .like('date', `${selectedMonth}%`);
+
+                const { data: allUsers, error: usersError } = await sbClient
+                    .from('users')
+                    .select('id, name, role')
+                    .eq('role', 'siswa');
+                
+                if (recordsError || usersError) {
+                    rankingBody.innerHTML = '<tr><td colspan="4" class="p-3 text-center text-red-500">Gagal memuat data.</td></tr>';
+                    return;
+                }
+
+                const rankings = getStudentRankings(allUsers, allRecords, selectedMonth);
                 rankingBody.innerHTML = '';
 
                 if (rankings.length === 0) {
@@ -728,14 +879,23 @@
                 });
             }
 
-            function renderRegisteredStudents() {
+            async function renderRegisteredStudents() {
                 const listBody = document.getElementById('registered-students-list');
-                listBody.innerHTML = '';
-                const students = users.filter(u => u.role === 'siswa');
+                listBody.innerHTML = '<tr><td colspan="2" class="p-3 text-center text-gray-500">Memuat data...</td></tr>';
+                
+                const { data: students, error } = await sbClient
+                    .from('users')
+                    .select('name, username')
+                    .eq('role', 'siswa');
+
+                if (error) { /* handle error */ return; }
+
                 if (students.length === 0) {
                     listBody.innerHTML = '<tr><td colspan="2" class="p-3 text-center text-gray-500">Belum ada siswa.</td></tr>';
                     return;
                 }
+                
+                listBody.innerHTML = '';
                 students.forEach(s => {
                     listBody.innerHTML += `
                         <tr class->
@@ -746,46 +906,81 @@
                 });
             }
 
-            registerStudentForm.addEventListener('submit', (e) => {
+            registerStudentForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
+                showLoading(true);
                 const name = document.getElementById('new-student-name').value;
                 const nisn = document.getElementById('new-student-nisn').value;
                 const username = document.getElementById('new-student-username').value;
                 const password = document.getElementById('new-student-password').value;
                 const photoFile = document.getElementById('new-student-photo').files[0];
 
-                if (users.find(u => u.username === username)) {
-                    showNotification('Error', 'Username sudah digunakan.', false);
-                    return;
-                }
-                
-                if (users.find(u => u.nisn === nisn)) {
-                    showNotification('Error', 'NISN sudah terdaftar.', false);
+                // --- PERBAIKAN DIMULAI DI SINI ---
+
+                // Cek duplikat username atau NISN
+                const { data: existingUser, error: checkError } = await sbClient
+                    .from('users')
+                    .select('username, nisn')
+                    .or(`username.eq.${username},nisn.eq.${nisn}`);
+
+                // 1. Tambahkan pengecekan error di sini
+                if (checkError) {
+                    console.error('Error saat cek duplikat:', checkError);
+                    showNotification('Error', 'Gagal memvalidasi data. Coba lagi.', false);
+                    showLoading(false);
                     return;
                 }
 
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    const newStudent = {
-                        id: 's' + (users.filter(u => u.role === 'siswa').length + 100), // ID unik sederhana
-                        username: username,
-                        password: password,
-                        role: 'siswa',
+                // 2. Perbaiki logika pengecekan (sekarang aman karena checkError sudah ditangani)
+                //    Pengecekan 'existingUser' harus null atau undefined jika tidak ada error
+                if (existingUser && existingUser.length > 0) {
+                    showNotification('Error', 'Username atau NISN sudah digunakan.', false);
+                    showLoading(false);
+                    return;
+                }
+
+                // 3. Upload foto profil
+                const fileName = `profile/${Date.now()}-${photoFile.name}`;
+                const publicUrl = await uploadPhoto(photoFile, 'profile', fileName);
+                
+                if (!publicUrl) {
+                    showNotification('Error', 'Gagal mengupload foto.', false);
+                    showLoading(false);
+                    return;
+                }
+
+                // 4. Insert data siswa baru
+                const { data: newStudent, error: insertError } = await sbClient
+                    .from('users')
+                    .insert({
                         name: name,
                         nisn: nisn,
-                        profilePhoto: event.target.result
-                    };
-                    users.push(newStudent);
-                    saveData();
+                        username: username,
+                        password: password, // Sekali lagi, ini tidak aman untuk produksi
+                        role: 'siswa',
+                        profilePhoto: publicUrl
+                    });
+
+                // 5. Berikan log error yang lebih detail
+                if (insertError) {
+                    console.error('Error saat insert siswa:', insertError);
+                    // Cek error RLS
+                    if (insertError.message.includes('security policy') || insertError.message.includes('violates row-level security policy')) {
+                        showNotification('Error Konfigurasi', 'Gagal mendaftar: Kebijakan RLS (Row Level Security) di Supabase menghalangi. Harap aktifkan "INSERT" untuk tabel "users".', false);
+                    } else {
+                        showNotification('Error', 'Gagal mendaftarkan siswa. Cek konsol (F12) untuk detail.', false);
+                    }
+                } else {
                     showNotification('Sukses', `Siswa ${name} berhasil didaftarkan.`);
                     registerStudentForm.reset();
-                    renderRegisteredStudents();
-                };
-                reader.readAsDataURL(photoFile);
+                    await renderRegisteredStudents();
+                }
+                showLoading(false);
+                // --- PERBAIKAN SELESAI ---
             });
 
             function setupReportDownload() {
-                document.getElementById('download-report-btn').addEventListener('click', () => {
+                document.getElementById('download-report-btn').addEventListener('click', async () => {
                     const startDate = document.getElementById('start-date').value;
                     const endDate = document.getElementById('end-date').value;
 
@@ -794,19 +989,23 @@
                         return;
                     }
 
-                    const filteredRecords = attendanceRecords.filter(r => r.date >= startDate && r.date <= endDate);
+                    showLoading(true);
+                    const { data: filteredRecords, error } = await sbClient
+                        .from('attendance_records')
+                        .select('*, users(name, nisn)')
+                        .gte('date', startDate)
+                        .lte('date', endDate);
                     
+                    showLoading(false);
                     if (filteredRecords.length === 0) {
                         showNotification('Info', 'Tidak ada data di rentang tanggal tersebut.', false);
                         return;
                     }
 
-                    const students = users.filter(u => u.role === 'siswa');
                     const data = filteredRecords.map(record => {
-                        const student = findUserById(record.userId);
                         return {
-                            "Nama Siswa": student.name,
-                            "NISN": student.nisn,
+                            "Nama Siswa": record.users.name,
+                            "NISN": record.users.nisn,
                             "Tanggal": record.date,
                             "Check-in": record.checkIn || '-',
                             "Check-out": record.checkOut || '-',
@@ -828,49 +1027,62 @@
                 const cameraStarted = await startCamera('checkin-video-preview');
                 if (cameraStarted) {
                     checkinSelfieModal.classList.remove('hidden');
-                    // Aktifkan tombol capture setelah 2 detik untuk memastikan kamera siap
                     setTimeout(() => {
                         document.getElementById('capture-checkin-btn').disabled = false;
                     }, 2000);
                 }
             });
 
-            document.getElementById('capture-checkin-btn').addEventListener('click', () => {
+            document.getElementById('capture-checkin-btn').addEventListener('click', async () => {
+                showLoading(true);
                 const video = document.getElementById('checkin-video-preview');
                 const canvas = document.getElementById('checkin-selfie-canvas');
                 const context = canvas.getContext('2d');
                 canvas.width = video.videoWidth;
                 canvas.height = video.videoHeight;
-                context.translate(canvas.width, 0); // Mirror
-                context.scale(-1, 1); // Mirror
+                context.translate(canvas.width, 0); context.scale(-1, 1); // Mirror
                 context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
                 const photoDataUrl = canvas.toDataURL('image/jpeg');
                 stopCamera();
                 checkinSelfieModal.classList.add('hidden');
 
+                // Upload foto
+                const blob = dataURLtoBlob(photoDataUrl);
+                const fileName = `checkin/${currentUser.id}-${getTodayDateString()}.jpg`;
+                const publicUrl = await uploadPhoto(blob, 'checkin', fileName);
+
+                if (!publicUrl) {
+                    showNotification('Error', 'Gagal upload foto check-in.', false);
+                    showLoading(false);
+                    return;
+                }
+
                 const checkInTime = new Date();
                 const checkInTimeString = checkInTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-                
-                // Aturan telat: lebih dari jam 7:00
                 const isLate = checkInTime.getHours() >= 7; 
                 
                 const newRecord = {
-                    id: 'att-' + Date.now(),
                     userId: currentUser.id,
                     date: getTodayDateString(),
                     checkIn: checkInTimeString,
                     checkOut: null,
                     status: isLate ? 'Telat' : 'Hadir',
-                    checkInPhoto: photoDataUrl
+                    checkInPhoto: publicUrl
                 };
 
-                attendanceRecords.push(newRecord);
-                saveData();
-                updateAttendanceStatus();
-                renderStudentHistory();
-                showNotification('Check-in Berhasil', `Anda berhasil check-in pukul ${checkInTimeString}. Status: ${newRecord.status}`);
+                // Insert ke database
+                const { error } = await sbClient.from('attendance_records').insert(newRecord);
+
+                if (error) {
+                    showNotification('Error', 'Gagal menyimpan data check-in.', false);
+                } else {
+                    await updateAttendanceStatus();
+                    await renderStudentHistory();
+                    showNotification('Check-in Berhasil', `Anda berhasil check-in pukul ${checkInTimeString}. Status: ${newRecord.status}`);
+                }
                 document.getElementById('capture-checkin-btn').disabled = true;
+                showLoading(false);
             });
 
             document.getElementById('cancel-checkin-btn').addEventListener('click', () => {
@@ -880,16 +1092,26 @@
             });
 
             // 2. Check-out
-            document.getElementById('check-out-btn').addEventListener('click', () => {
+            document.getElementById('check-out-btn').addEventListener('click', async () => {
+                showLoading(true);
                 const today = getTodayDateString();
-                const todayRecord = attendanceRecords.find(r => r.userId === currentUser.id && r.date === today);
-                if (todayRecord && !todayRecord.checkOut) {
-                    todayRecord.checkOut = getCurrentTimeString();
-                    saveData();
-                    updateAttendanceStatus();
-                    renderStudentHistory();
-                    showNotification('Check-out Berhasil', `Anda berhasil check-out pukul ${todayRecord.checkOut}.`);
+                const checkOutTime = getCurrentTimeString();
+                
+                const { error } = await sbClient
+                    .from('attendance_records')
+                    .update({ checkOut: checkOutTime })
+                    .eq('userId', currentUser.id)
+                    .eq('date', today)
+                    .is('checkOut', null); // Hanya update jika belum check-out
+
+                if (error) {
+                    showNotification('Error', 'Gagal check-out.', false);
+                } else {
+                    await updateAttendanceStatus();
+                    await renderStudentHistory();
+                    showNotification('Check-out Berhasil', `Anda berhasil check-out pukul ${checkOutTime}.`);
                 }
+                showLoading(false);
             });
 
             // 3. Lihat Profil
@@ -905,15 +1127,30 @@
             });
 
             // 4. Ajukan Izin
-            document.getElementById('leave-request-btn').addEventListener('click', () => {
-                // Cek apakah sudah mengajukan untuk hari ini
+            document.getElementById('leave-request-btn').addEventListener('click', async () => {
                 const today = getTodayDateString();
-                const existingRequest = leaveRequests.find(l => l.userId === currentUser.id && l.date === today);
+
+                // Cek apakah sudah mengajukan
+                const { data: existingRequest, error: reqError } = await sbClient
+                    .from('leave_requests')
+                    .select('id, type, status')
+                    .eq('userId', currentUser.id)
+                    .eq('date', today)
+                    .single();
+
                 if (existingRequest) {
                     showNotification('Info', `Anda sudah mengajukan ${existingRequest.type} untuk hari ini. Status: ${existingRequest.status}`, false);
                     return;
                 }
-                const todayRecord = attendanceRecords.find(r => r.userId === currentUser.id && r.date === today);
+
+                // Cek apakah sudah check-in
+                const { data: todayRecord, error: recError } = await sbClient
+                    .from('attendance_records')
+                    .select('id')
+                    .eq('userId', currentUser.id)
+                    .eq('date', today)
+                    .single();
+                
                 if (todayRecord) {
                     showNotification('Info', 'Anda sudah melakukan check-in hari ini, tidak bisa mengajukan izin.', false);
                     return;
@@ -922,31 +1159,42 @@
                 leaveRequestModal.classList.remove('hidden');
             });
 
-            document.getElementById('leave-request-form').addEventListener('submit', (e) => {
+            document.getElementById('leave-request-form').addEventListener('submit', async (e) => {
                 e.preventDefault();
+                showLoading(true);
                 const type = document.getElementById('leave-type').value;
                 const reason = document.getElementById('leave-reason').value;
+                let publicUrl = null;
+
+                if (selfieDataUrl) {
+                    const blob = dataURLtoBlob(selfieDataUrl);
+                    const fileName = `proof/${currentUser.id}-${getTodayDateString()}.jpg`;
+                    publicUrl = await uploadPhoto(blob, 'proof', fileName);
+                }
                 
                 const newRequest = {
-                    id: 'leave-' + Date.now(),
                     userId: currentUser.id,
-                    date: getTodayDateString(), // Izin hanya berlaku untuk hari ini
+                    date: getTodayDateString(),
                     type: type,
                     reason: reason,
-                    proofPhoto: selfieDataUrl,
+                    proofPhoto: publicUrl,
                     status: 'Pending'
                 };
 
-                leaveRequests.push(newRequest);
-                saveData();
+                const { error } = await sbClient.from('leave_requests').insert(newRequest);
+
+                if (error) {
+                    showNotification('Error', 'Gagal mengirim pengajuan.', false);
+                } else {
+                    showNotification('Pengajuan Terkirim', 'Pengajuan izin Anda telah terkirim dan menunggu persetujuan guru.');
+                }
                 
                 leaveRequestModal.classList.add('hidden');
                 document.getElementById('leave-request-form').reset();
                 document.getElementById('photo-preview').classList.add('hidden');
                 selfieDataUrl = null;
-                
-                showNotification('Pengajuan Terkirim', 'Pengajuan izin Anda telah terkirim dan menunggu persetujuan guru.');
-                updateAttendanceStatus(); // Update tombol
+                await updateAttendanceStatus();
+                showLoading(false);
             });
 
             document.getElementById('cancel-leave-request-btn').addEventListener('click', () => {
@@ -970,15 +1218,13 @@
                 const context = canvas.getContext('2d');
                 canvas.width = video.videoWidth;
                 canvas.height = video.videoHeight;
-                context.translate(canvas.width, 0); // Mirror
-                context.scale(-1, 1); // Mirror
+                context.translate(canvas.width, 0); context.scale(-1, 1); // Mirror
                 context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
                 selfieDataUrl = canvas.toDataURL('image/jpeg');
                 stopCamera();
                 selfieModal.classList.add('hidden');
 
-                // Tampilkan preview di form izin
                 const photoPreview = document.getElementById('photo-preview');
                 photoPreview.src = selfieDataUrl;
                 photoPreview.classList.remove('hidden');
@@ -989,15 +1235,19 @@
                 selfieModal.classList.add('hidden');
             });
 
-
             // --- INISIALISASI APLIKASI ---
-            const checkSession = () => {
+            const checkSession = async () => {
                 const userString = sessionStorage.getItem('currentUser');
                 if (userString) {
                     currentUser = JSON.parse(userString);
                     setLoginBackground(false);
-                    if (currentUser.role === 'siswa') showStudentDashboard();
-                    else showTeacherDashboard();
+                    showLoading(true);
+                    if (currentUser.role === 'siswa') {
+                        await showStudentDashboard();
+                    } else {
+                        await showTeacherDashboard();
+                    }
+                    showLoading(false);
                 } else {
                     setLoginBackground(true);
                 }
