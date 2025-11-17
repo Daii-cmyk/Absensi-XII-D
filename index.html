@@ -310,6 +310,23 @@
                 globalLoading.classList.toggle('hidden', !show);
             };
 
+            // --- PERBAIKAN: Memindahkan showNotification ke atas agar bisa diakses oleh uploadPhoto ---
+            function showNotification(title, message, isSuccess = true) {
+                document.getElementById('notification-title').textContent = title;
+                document.getElementById('notification-message').textContent = message;
+                const icon = document.getElementById('notification-icon');
+                if (isSuccess) {
+                    icon.innerHTML = `<i class="fa-solid fa-check-circle text-green-500"></i>`;
+                } else {
+                    icon.innerHTML = `<i class="fa-solid fa-times-circle text-red-500"></i>`;
+                }
+                notificationModal.classList.remove('hidden');
+            }
+            document.getElementById('close-notification-btn').addEventListener('click', () => {
+                notificationModal.classList.add('hidden');
+            });
+            // --- AKHIR PEMINDAHAN ---
+
             // Fungsi untuk mengubah DataURL (Base64) menjadi Blob untuk upload
             function dataURLtoBlob(dataurl) {
                 var arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1],
@@ -332,6 +349,20 @@
 
                 if (error) {
                     console.error('Error uploading photo:', error);
+                    
+                    // --- PERBAIKAN: Deteksi error RLS Storage dan beri notifikasi ---
+                    if (error.message.includes('security policy')) {
+                        showNotification(
+                            'Error Konfigurasi Storage', 
+                            'Gagal upload foto: Kebijakan RLS (Row Level Security) di Supabase Storage menghalangi. Anda perlu menambahkan policy "INSERT" dan "SELECT" pada bucket "photos".', 
+                            false
+                        );
+                    } else {
+                        // Tampilkan notifikasi error umum jika bukan RLS
+                        showNotification('Error', 'Gagal mengupload foto. Cek konsol.', false);
+                    }
+                    // --- AKHIR PERBAIKAN ---
+                    
                     return null;
                 }
 
@@ -355,20 +386,7 @@
                 }
             }
 
-            function showNotification(title, message, isSuccess = true) {
-                document.getElementById('notification-title').textContent = title;
-                document.getElementById('notification-message').textContent = message;
-                const icon = document.getElementById('notification-icon');
-                if (isSuccess) {
-                    icon.innerHTML = `<i class="fa-solid fa-check-circle text-green-500"></i>`;
-                } else {
-                    icon.innerHTML = `<i class="fa-solid fa-times-circle text-red-500"></i>`;
-                }
-                notificationModal.classList.remove('hidden');
-            }
-            document.getElementById('close-notification-btn').addEventListener('click', () => {
-                notificationModal.classList.add('hidden');
-            });
+            // --- PERBAIKAN: Menghapus blok fungsi showNotification yang duplikat dan rusak ---
             
             async function startCamera(videoElementId) {
                 try {
@@ -398,7 +416,7 @@
                 const students = allUsers.filter(u => u.role === 'siswa');
                 const rankings = students.map(student => {
                     const presentCount = allAttendanceRecords.filter(record =>
-                        record.userId === student.id &&
+                        record.userid === student.id &&
                         record.date.startsWith(monthYear) &&
                         (record.status === 'Hadir' || record.status === 'Telat')
                     ).length;
@@ -489,7 +507,7 @@
                 const { data: todayRecord, error: recordError } = await sbClient
                     .from('attendance_records')
                     .select('*')
-                    .eq('userId', currentUser.id)
+                    .eq('userid', currentUser.id)
                     .eq('date', today)
                     .single();
 
@@ -497,7 +515,7 @@
                 const { data: todayLeave, error: leaveError } = await sbClient
                     .from('leave_requests')
                     .select('*')
-                    .eq('userId', currentUser.id)
+                    .eq('userid', currentUser.id)
                     .eq('date', today)
                     .eq('status', 'Disetujui')
                     .single();
@@ -533,10 +551,13 @@
                 const { data: myRecords, error } = await sbClient
                     .from('attendance_records')
                     .select('*')
-                    .eq('userId', currentUser.id)
+                    .eq('userid', currentUser.id)
                     .order('date', { ascending: false }); // Urutkan terbaru dulu
 
                 if (error) {
+                    // --- TAMBAHAN KODE ---
+                    console.error("Error memuat riwayat (renderStudentHistory):", error);
+                    // --- AKHIR TAMBAHAN ---
                     historyBody.innerHTML = '<tr><td colspan="4" class="p-3 text-center text-red-500">Gagal memuat riwayat.</td></tr>';
                     return;
                 }
@@ -571,7 +592,7 @@
                 // Ambil semua data yang diperlukan untuk ranking
                 const { data: allRecords, error: recordsError } = await sbClient
                     .from('attendance_records')
-                    .select('userId, date, status')
+                    .select('userid, date, status')
                     .like('date', `${currentMonth}%`);
 
                 const { data: allUsers, error: usersError } = await sbClient
@@ -580,6 +601,9 @@
                     .eq('role', 'siswa');
 
                 if (recordsError || usersError) {
+                    // --- TAMBAHAN KODE ---
+                    console.error("Error memuat peringkat (renderStudentRank):", { recordsError, usersError });
+                    // --- AKHIR TAMBAHAN ---
                     container.innerHTML = `<p class="text-red-500">Gagal memuat peringkat.</p>`;
                     return;
                 }
@@ -636,6 +660,7 @@
                             if (targetId === 'izin') await renderLeaveRequests();
                             if (targetId === 'peringkat') await renderRanking();
                             if (targetId === 'daftar') await renderRegisteredStudents();
+                            if (targetId === 'laporan') setupReportDownload(); // Inisialisasi event listener laporan
                         } catch (err) {
                             console.error("Error rendering tab:", err);
                             showNotification("Error", "Gagal memuat data tab.", false);
@@ -676,8 +701,8 @@
                 
                 rekapBody.innerHTML = '';
                 allStudents.forEach(student => {
-                    const todayRecord = allRecords.find(r => r.userId === student.id);
-                    const todayLeave = allLeaves.find(l => l.userId === student.id);
+                    const todayRecord = allRecords.find(r => r.userid === student.id);
+                    const todayLeave = allLeaves.find(l => l.userid === student.id);
                     
                     let status, checkIn, checkOut, photo, statusClass;
                     
@@ -793,7 +818,7 @@
                 const { error: insertError } = await sbClient
                     .from('attendance_records')
                     .insert({
-                        userId: req.userId,
+                        userid: req.userid,
                         date: req.date,
                         checkIn: null,
                         checkOut: null,
@@ -846,7 +871,7 @@
                 // Ambil semua data yang diperlukan
                 const { data: allRecords, error: recordsError } = await sbClient
                     .from('attendance_records')
-                    .select('userId, date, status')
+                    .select('userid, date, status')
                     .like('date', `${selectedMonth}%`);
 
                 const { data: allUsers, error: usersError } = await sbClient
@@ -855,6 +880,9 @@
                     .eq('role', 'siswa');
                 
                 if (recordsError || usersError) {
+                    // --- TAMBAHAN KODE ---
+                    console.error("Error memuat peringkat (renderRanking):", { recordsError, usersError });
+                    // --- AKHIR TAMBAHAN ---
                     rankingBody.innerHTML = '<tr><td colspan="4" class="p-3 text-center text-red-500">Gagal memuat data.</td></tr>';
                     return;
                 }
@@ -898,7 +926,7 @@
                 listBody.innerHTML = '';
                 students.forEach(s => {
                     listBody.innerHTML += `
-                        <tr class->
+                        <tr class>
                             <td class="p-3">${s.name}</td>
                             <td class="p-3">${s.username}</td>
                         </tr>
@@ -944,7 +972,7 @@
                 const publicUrl = await uploadPhoto(photoFile, 'profile', fileName);
                 
                 if (!publicUrl) {
-                    showNotification('Error', 'Gagal mengupload foto.', false);
+                    // Notifikasi error sudah ditangani di dalam uploadPhoto()
                     showLoading(false);
                     return;
                 }
@@ -980,7 +1008,13 @@
             });
 
             function setupReportDownload() {
-                document.getElementById('download-report-btn').addEventListener('click', async () => {
+                // Hapus event listener lama agar tidak menumpuk
+                const downloadBtn = document.getElementById('download-report-btn');
+                const newDownloadBtn = downloadBtn.cloneNode(true); // Buat klon
+                downloadBtn.parentNode.replaceChild(newDownloadBtn, downloadBtn); // Ganti
+
+                // Tambahkan event listener ke tombol baru
+                newDownloadBtn.addEventListener('click', async () => {
                     const startDate = document.getElementById('start-date').value;
                     const endDate = document.getElementById('end-date').value;
 
@@ -990,22 +1024,36 @@
                     }
 
                     showLoading(true);
+                    
+                    // Gunakan join untuk mengambil nama dan nisn
                     const { data: filteredRecords, error } = await sbClient
                         .from('attendance_records')
-                        .select('*, users(name, nisn)')
+                        .select(`
+                            date, checkIn, checkOut, status,
+                            users ( name, nisn )
+                        `)
                         .gte('date', startDate)
                         .lte('date', endDate);
                     
                     showLoading(false);
+
+                    if (error) {
+                        console.error("Error unduh laporan:", error);
+                        showNotification('Error', 'Gagal mengambil data laporan.', false);
+                        return;
+                    }
+
                     if (filteredRecords.length === 0) {
                         showNotification('Info', 'Tidak ada data di rentang tanggal tersebut.', false);
                         return;
                     }
 
                     const data = filteredRecords.map(record => {
+                        const userName = record.users ? record.users.name : 'Data Siswa Hilang';
+                        const userNisn = record.users ? record.users.nisn : '-';
                         return {
-                            "Nama Siswa": record.users.name,
-                            "NISN": record.users.nisn,
+                            "Nama Siswa": userName,
+                            "NISN": userNisn,
                             "Tanggal": record.date,
                             "Check-in": record.checkIn || '-',
                             "Check-out": record.checkOut || '-',
@@ -1053,7 +1101,7 @@
                 const publicUrl = await uploadPhoto(blob, 'checkin', fileName);
 
                 if (!publicUrl) {
-                    showNotification('Error', 'Gagal upload foto check-in.', false);
+                    // Notifikasi error sudah ditangani di dalam uploadPhoto()
                     showLoading(false);
                     return;
                 }
@@ -1063,7 +1111,7 @@
                 const isLate = checkInTime.getHours() >= 7; 
                 
                 const newRecord = {
-                    userId: currentUser.id,
+                    userid: currentUser.id,
                     date: getTodayDateString(),
                     checkIn: checkInTimeString,
                     checkOut: null,
@@ -1075,7 +1123,15 @@
                 const { error } = await sbClient.from('attendance_records').insert(newRecord);
 
                 if (error) {
-                    showNotification('Error', 'Gagal menyimpan data check-in.', false);
+                    // --- TAMBAHAN KODE ---
+                    console.error("Error saat check-in (insert):", error);
+                    // Cek jika ini error duplikat
+                    if (error.code === '23505') { // Kode error 'unique_violation'
+                        showNotification('Error', 'Anda sudah melakukan check-in hari ini.', false);
+                    } else {
+                        showNotification('Error', 'Gagal menyimpan data check-in. Cek konsol (F12).', false);
+                    }
+                    // --- AKHIR TAMBAHAN ---
                 } else {
                     await updateAttendanceStatus();
                     await renderStudentHistory();
@@ -1100,7 +1156,7 @@
                 const { error } = await sbClient
                     .from('attendance_records')
                     .update({ checkOut: checkOutTime })
-                    .eq('userId', currentUser.id)
+                    .eq('userid', currentUser.id)
                     .eq('date', today)
                     .is('checkOut', null); // Hanya update jika belum check-out
 
@@ -1134,7 +1190,7 @@
                 const { data: existingRequest, error: reqError } = await sbClient
                     .from('leave_requests')
                     .select('id, type, status')
-                    .eq('userId', currentUser.id)
+                    .eq('userid', currentUser.id)
                     .eq('date', today)
                     .single();
 
@@ -1147,7 +1203,7 @@
                 const { data: todayRecord, error: recError } = await sbClient
                     .from('attendance_records')
                     .select('id')
-                    .eq('userId', currentUser.id)
+                    .eq('userid', currentUser.id)
                     .eq('date', today)
                     .single();
                 
@@ -1173,7 +1229,7 @@
                 }
                 
                 const newRequest = {
-                    userId: currentUser.id,
+                    userid: currentUser.id,
                     date: getTodayDateString(),
                     type: type,
                     reason: reason,
@@ -1253,6 +1309,8 @@
                 }
             };
             
+            // Panggil inisialisasi tab laporan sekali di awal
+            setupReportDownload();
             checkSession();
         });
     </script>
