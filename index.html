@@ -530,10 +530,10 @@
 
                 if (todayRecord) {
                     checkInBtn.disabled = true;
-                    statusEl.textContent = `Check-in: ${todayRecord.checkIn} (${todayRecord.status})`;
-                    if (todayRecord.checkOut) {
+                    statusEl.textContent = `Check-in: ${todayRecord.checkin} (${todayRecord.status})`;
+                    if (todayRecord.checkout) {
                         checkOutBtn.disabled = true;
-                        statusEl.textContent = `Anda sudah check-out (${todayRecord.checkOut}).`;
+                        statusEl.textContent = `Anda sudah check-out (${todayRecord.checkout}).`;
                     } else {
                         checkOutBtn.disabled = false;
                     }
@@ -572,8 +572,8 @@
                     historyBody.innerHTML += `
                         <tr class="border-b">
                             <td class="p-3">${r.date}</td>
-                            <td class="p-3">${r.checkIn || '-'}</td>
-                            <td class="p-3">${r.checkOut || '-'}</td>
+                            <td class="p-3">${r.checkin || '-'}</td>
+                            <td class="p-3">${r.checkout || '-'}</td>
                             <td class="p-3"><span class="px-2 py-1 rounded-full text-xs font-medium ${
                                 r.status === 'Hadir' ? 'bg-green-100 text-green-800' :
                                 r.status === 'Telat' ? 'bg-yellow-100 text-yellow-800' :
@@ -708,9 +708,9 @@
                     
                     if (todayRecord) {
                         status = todayRecord.status;
-                        checkIn = todayRecord.checkIn;
-                        checkOut = todayRecord.checkOut || '-';
-                        photo = todayRecord.checkInPhoto;
+                        checkIn = todayRecord.checkin;
+                        checkOut = todayRecord.checkout || '-';
+                        photo = todayRecord.checkinphoto;
                         statusClass = status === 'Hadir' ? 'bg-green-100 text-green-800' : 
                                       status === 'Telat' ? 'bg-yellow-100 text-yellow-800' :
                                       'bg-blue-100 text-blue-800'; // Izin/Sakit dari approval
@@ -1026,10 +1026,11 @@
                     showLoading(true);
                     
                     // Gunakan join untuk mengambil nama dan nisn
+                    // PERBAIKAN: Menggunakan 'checkin' dan 'checkout' (huruf kecil)
                     const { data: filteredRecords, error } = await sbClient
                         .from('attendance_records')
                         .select(`
-                            date, checkIn, checkOut, status,
+                            date, checkin, checkout, status,
                             users ( name, nisn )
                         `)
                         .gte('date', startDate)
@@ -1055,8 +1056,9 @@
                             "Nama Siswa": userName,
                             "NISN": userNisn,
                             "Tanggal": record.date,
-                            "Check-in": record.checkIn || '-',
-                            "Check-out": record.checkOut || '-',
+                            // PERBAIKAN: Mengakses properti 'checkin' dan 'checkout' (huruf kecil)
+                            "Check-in": record.checkin || '-',
+                            "Check-out": record.checkout || '-',
                             "Status": record.status
                         };
                     });
@@ -1110,13 +1112,14 @@
                 const checkInTimeString = checkInTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
                 const isLate = checkInTime.getHours() >= 7; 
                 
+                // PERBAIKAN: Menggunakan nama kolom huruf kecil untuk insert
                 const newRecord = {
                     userid: currentUser.id,
                     date: getTodayDateString(),
-                    checkIn: checkInTimeString,
-                    checkOut: null,
+                    checkin: checkInTimeString,
+                    checkout: null,
                     status: isLate ? 'Telat' : 'Hadir',
-                    checkInPhoto: publicUrl
+                    checkinphoto: publicUrl
                 };
 
                 // Insert ke database
@@ -1153,12 +1156,13 @@
                 const today = getTodayDateString();
                 const checkOutTime = getCurrentTimeString();
                 
+                // PERBAIKAN: Menggunakan nama kolom huruf kecil untuk update
                 const { error } = await sbClient
                     .from('attendance_records')
-                    .update({ checkOut: checkOutTime })
+                    .update({ checkout: checkOutTime })
                     .eq('userid', currentUser.id)
                     .eq('date', today)
-                    .is('checkOut', null); // Hanya update jika belum check-out
+                    .is('checkout', null); // Hanya update jika belum check-out
 
                 if (error) {
                     showNotification('Error', 'Gagal check-out.', false);
