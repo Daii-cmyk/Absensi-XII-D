@@ -413,13 +413,30 @@
             }
             
             function getStudentRankings(allUsers, allAttendanceRecords, monthYear) {
+                // --- DEBUGGING: Cek data di Console (F12) ---
+                console.log(`[Ranking] Menghitung untuk: ${monthYear}`);
+                console.log(`[Ranking] Total data absen ditemukan: ${allAttendanceRecords.length}`);
+                if (allAttendanceRecords.length > 0) {
+                    console.log("[Ranking] Contoh data record pertama:", allAttendanceRecords[0]);
+                }
+
                 const students = allUsers.filter(u => u.role === 'siswa');
                 const rankings = students.map(student => {
-                    const presentCount = allAttendanceRecords.filter(record =>
-                        record.userid === student.id &&
-                        record.date.startsWith(monthYear) &&
-                        (record.status === 'Hadir' || record.status === 'Telat')
-                    ).length;
+                    const presentCount = allAttendanceRecords.filter(record => {
+                        // 1. Ambil User ID dengan aman (bisa 'userid' atau 'userId')
+                        const rUserId = record.userid || record.userId;
+                        
+                        // 2. Normalisasi Status (ubah ke huruf kecil & hapus spasi)
+                        const rStatus = record.status ? record.status.toLowerCase().trim() : '';
+
+                        // 3. Pengecekan Logika
+                        const isUserMatch = rUserId === student.id;
+                        const isDateMatch = record.date && record.date.startsWith(monthYear);
+                        // Terima 'hadir' atau 'telat' (tidak peduli besar/kecil huruf)
+                        const isStatusMatch = rStatus === 'hadir' || rStatus === 'telat';
+
+                        return isUserMatch && isDateMatch && isStatusMatch;
+                    }).length;
 
                     const [year, month] = monthYear.split('-').map(Number);
                     const totalDaysInMonth = new Date(year, month, 0).getDate(); 
